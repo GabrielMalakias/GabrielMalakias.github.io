@@ -3,7 +3,7 @@ description: About programming and things that im trying to learn
 meta_description: "About programming and things that im trying to learn"
 
 markdown: kramdown
-highlighter: pygments
+highlighter: rouge
 logo: false
 paginate: 15
 baseurl: /
