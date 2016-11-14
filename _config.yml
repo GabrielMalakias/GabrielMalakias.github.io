@@ -1,6 +1,8 @@
 name: gabriel_malakias
-description: About programming and things that im trying to learn
+description: "About programming and things that i'm trying to learn"
+bio: "I'm a tech explorer, currently using Ruby and trying to learn more."
 meta_description: "About programming and things that im trying to learn"
+
 
 markdown: kramdown
 highlighter: rouge
