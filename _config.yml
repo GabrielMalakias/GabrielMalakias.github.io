@@ -1,16 +1,15 @@
-name: Your New Jekyll Site
-description: Blogging about stuffs
-meta_description: "Your New Jekyll Site, Blogging about stuffs"
+name: gabriel_malakias
+description: About programming and things that im trying to learn
+meta_description: "About programming and things that im trying to learn"
 
 markdown: kramdown
 highlighter: pygments
 logo: false
 paginate: 15
 baseurl: /
-domain_name: 'http://yourblog-domain.com'
-google_analytics: 'UA-XXXXXXXX-X'
+domain_name: 'https://gabrielmalakias.github.io'
+google_analytics: 'UA-87321020-1'
 gems: [jekyll-paginate]
 
-# Details for the RSS feed generator
-url:            'blog url'
-author:         'Your Name'
+url:            'https://gabrielmalakias.github.io'
+author:         'Gabriel Malaquias'
