@@ -3,9 +3,9 @@ layout: post
 categories: ruby dry-rb rails
 ---
 
-Hello, around 2 or 3 months ago I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code. "How can I use?". You can use your creativity, Dry-rb it's only one of many possibilities.
+Hello, around 2 or 3 months ago I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code. "How can I use?". You can use your creativity, Dry-rb it's only one of many code possibilities.
 
-Today in this post, I will try to show how can we use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), or C# or some language or framework with dependency-injection you saw the amazing 'magic' of Dependency Injection(DI).
+Today in this post, I will try to show how can we use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), or C# or some language or framework with dependency-injection support you saw the amazing 'magic' of Dependency Injection(DI).
 
 If you are thinking: "Oh, my Gosh but I never saw nothing about dependency injection in my life". Relax I didn't forget you. The Internet has a lot materials about dependency injection. If you read about SOLID, the D represents "Dependency inversion principle", this principle can be made with an creational pattern, a factory method or a DEPENDENCY INJECTION framework.
 
@@ -13,7 +13,7 @@ Here it's an image to represent DI:
 
 ![dependency-injection]({{ site.url }}/assets/images/dependency_injection.png)
 
-I will not explain all details behind this because many people already do it as you see below:
+I will not explain all details behind this because many people already do it, as you see below:
 
 * [solnic][solnic-dependency-injection];
 * [martin-fowler][martin-fowler-dependency-injection].
