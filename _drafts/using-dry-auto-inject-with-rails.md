@@ -186,7 +186,7 @@ module Commands
 end
 {% endhighlight %}
 
-If we run rails console and call Commands::Article::Create#call we will get a error, it's because we need to add the line below in Blog::Application, to load the files inside created folder.
+If we run rails console and call Commands::Article::Create#call we will get a error, it's because we need to add the line below in Blog::Application to load the files inside created folder.
 
 {% highlight ruby %}
 #config/application
