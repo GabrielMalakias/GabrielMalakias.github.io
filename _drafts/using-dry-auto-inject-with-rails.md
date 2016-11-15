@@ -3,9 +3,9 @@ layout: post
 categories: ruby dry-rb rails
 ---
 
-Hello everyone, around 2 or 3 months ago i saw dry-rb at first time, i thought: "Oh, that's awesome, i need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I explain... Well, Dry-rb is a bunch of of tools to simplify and improve code. Are TOOLS, "how I use?" Imagine! Use your creativity. Dry-rb it's one of possible good ways to make some code improvements.
+Hello, around 2 or 3 months ago I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code. "How can I use?". You can use your creativity, Dry-rb it's only one of many possibilities.
 
-Today in this post, I will try to show how use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), or C# or some language or framework with dependency-injection you saw the  amazing 'magic' of Dependency Injection(DI).
+Today in this post, I will try to show how can we use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), or C# or some language or framework with dependency-injection you saw the amazing 'magic' of Dependency Injection(DI).
 
 If you are thinking: "Oh, my Gosh but I never saw nothing about dependency injection in my life". Relax I didn't forget you. The Internet has a lot materials about dependency injection. If you read about SOLID, the D represents "Dependency inversion principle", this principle can be made with an creational pattern, a factory method or a DEPENDENCY INJECTION framework.
 
@@ -13,12 +13,12 @@ Here it's an image to represent DI:
 
 ![dependency-injection]({{ site.url }}/assets/images/dependency_injection.png)
 
-I will not explain all details behind this, because many people already do it as you see below:
+I will not explain all details behind this because many people already do it as you see below:
 
 * [solnic][solnic-dependency-injection];
 * [martin-fowler][martin-fowler-dependency-injection].
 
-But, if you already saw a code like this, it's a good point to think about the use of DI:
+But, if you already saw something like the code below, you already had a possibility to use DI:
 
 {% highlight ruby %}
 class CreateArticle
@@ -32,9 +32,9 @@ class CreateArticle
 end
 {% endhighlight %}
 
-In this case the class CreateArticle receives a external dependency and call repository method. The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you need to change the implementation is necessary change code inside CreateArticle and at place where it's called. If you have some tool to inject this automatically this code can be more uncoupled.
+In this case the class CreateArticle receives a external dependency and call repository method. The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you need to change the code implementation, most likely you need to change code inside CreateArticle and at place where it's called. If you have some tool to inject this automatically this code can be more uncoupled.
 
-First we need to install the enviroment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
+First we need to install the environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
 {% highlight shell %}
  ~/projects/ruby  ruby -v
@@ -44,7 +44,7 @@ ruby 2.3.1p112 (2016-04-26 revision 54768) [x86_64-linux]
 Rails 5.0.0.1
 {% endhighlight %}
 
-After installation, let's begin! Ok, to do the experiments we need a Rails application. To create a new App, type the command below. If you already has a Rails app, ignore this step,
+After installation, let's begin! To do the experiments we need a Rails application. To create a new App, type the command below. If you already has a Rails app, ignore this step,
 
 {% highlight shell %}
 ~/projects/ruby  rails new blog
@@ -73,7 +73,7 @@ gem 'dry-auto_inject'
 
 Dry-auto_inject depends of dry-configurable and dry-container. The dry-configurable is "a simple mixin to add thread-safe configuration behaviour to your classes", you can check [here][dry-configurable]. The dry-container is the core of auto-injection mechanism.
 
-Let's check how it's works.
+Let's check how it works.
 
 {% highlight shell %}
 ~/projects/ruby/blog  bundle exec rails c
@@ -88,7 +88,7 @@ Loading development environment (Rails 5.0.0.1)
   => #<Dry::Container:0x000000038bb200 @_container={"article_repository"=>#<Dry::Container::Item:0x000000034d0640 @item=#<Proc:0x000000034d06e0@(irb):43>, @options={:call=>true}>}>
 {% endhighlight %}
 
-When somebody calls Dry::Container#register with the identifier (:article_repository), the dependency is stored inside a proc. After that, when someone call Dry::Container#resolve with identifier(:article_repository) the proc is executed or returned. This code can be executed immediately when resolve the reference or no, let's check the code below.
+When someone calls Dry::Container#register with the identifier(:article_repository), the dependency is stored inside a proc. After that, when someone call Dry::Container#resolve with identifier(:article_repository) the proc is executed or returned. This code can be executed immediately when resolve the reference or no, let's check the code below.
 
 {% highlight ruby %}
 2.3.1 :001 > container = Dry::Container.new
@@ -154,7 +154,7 @@ Now, we need to create something to use dry-auto_inject. We will use scaffold to
 
 {% endhighlight %}
 
-We will change only the article#create route, but be free to modify everything that you want. Please create an article to test if everything is ok.
+We will change only the article#create route, but be free to modify everything you want. Please create an article to test if everything is ok.
 
 After tests, we can change the code. Take a look at articles_controller.rb.
 
@@ -169,9 +169,9 @@ class ArticlesController < ApplicationController
 end
 {% endhighlight %}
 
-I will create a command class only to ilustrate. The command concept here is very similar of [Trailblazer::Operation][trailblazer-operation]. If you don't like, you can use Article#create to create directly, don't worry :).
+I will create a command class only to ilustrate. The command concept here is very similar of [Trailblazer::Operation][trailblazer-operation]. If you don't like it, you can use Article#create to create directly, don't worry :).
 
-Now, create folder /commands/article under lib directory, after that create create.rb with lines above.
+Now, create folder /commands/article under lib directory, after that create file create.rb with lines below.
 
 {% highlight ruby %}
 #lib/commands/article/create.rb
@@ -186,7 +186,7 @@ module Commands
 end
 {% endhighlight %}
 
-If we run rails console and call Commands::Article::Create#call we will get a error, it's because we need to add the line below in Blog::Application to load the files inside created folder.
+If we run rails console and call Commands::Article::Create#call we will get a error, it's because we need to add the line responsible to load folders/files of new folder at Blog::Application class.
 
 {% highlight ruby %}
 #config/application
@@ -223,7 +223,7 @@ end
 AutoInject = Dry::AutoInject(Blog::Container)
 {% endhighlight %}
 
-In the last line the constant AutoInject is defined, this constant will be used inside of ArticlesController.
+In the last line the constant AutoInject is defined, this constant will be used inside of ArticlesController to inject dependency.
 
 To use the command registered, we need to include a reference to dependency registered before. The code will be like this:
 
@@ -244,7 +244,7 @@ class ArticlesController < ApplicationController
 
 It's works! To see how add tests, many cool things please check the [site][dry-rb].
 
-All code is available in my [github][dry-experiences].
+All code is available on my [github][dry-experiences].
 
 Thanks!
 #### References
