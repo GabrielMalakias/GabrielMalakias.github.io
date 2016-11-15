@@ -3,7 +3,7 @@ layout: page
 title: About me
 ---
 
-![Me]({{ site.url }}/assets/images/profile.png)
+![Me - Photo by ChupaCabras]({{ site.url }}/assets/images/profile.png)
 
 Hello everyone, don't be afraid with my photo..kkk. my name is Gabriel Malaquias, i'm 23 and systems developer at Locaweb. Currently i'm trying to learn English. My preferred programming language is Ruby <3, but now i'm trying to use some functional language as Elixir or Clojure. I already programmed in Java (the majority at the university), little things in C# and I made some experiences in Android.
 
