@@ -47,7 +47,7 @@ ruby 2.3.1p112 (2016-04-26 revision 54768) [x86_64-linux]
 Rails 5.0.0.1
 {% endhighlight %}
 
-After install, let's start! To do the experiments we need a Rails application. To create a new App, type the command below. If you already has a Rails app, ignore this step,
+After install, let's start! To do the experiments we need a Rails application. To create a new App, type the command below. If you already has a Rails app, ignore this step.
 
 {% highlight shell %}
 ~/projects/ruby  rails new blog
