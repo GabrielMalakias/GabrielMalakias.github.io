@@ -40,17 +40,17 @@ In this case the class CreateArticle receives a external dependency and call rep
 First we need to install the environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
 {% highlight shell %}
- ~/projects/ruby  ruby -v
+ ~/projects/ruby  ruby -v
 ruby 2.3.1p112 (2016-04-26 revision 54768) [x86_64-linux]
 
-~/projects/ruby  rails -v
+~/projects/ruby  rails -v
 Rails 5.0.0.1
 {% endhighlight %}
 
 After installation, let's begin! To do the experiments we need a Rails application. To create a new App, type the command below. If you already has a Rails app, ignore this step,
 
 {% highlight shell %}
-~/projects/ruby  rails new blog
+~/projects/ruby  rails new blog
 create
 create  README.md
 create  Rakefile
@@ -68,7 +68,7 @@ gem 'dry-auto_inject'
 {% endhighlight %}
 
 {% highlight shell %}
-/projects/ruby/blog  bundle list | grep dry
+/projects/ruby/blog  bundle list | grep dry
   * dry-auto_inject (0.4.1)
   * dry-configurable (0.1.7)
   * dry-container (0.5.0)
@@ -79,7 +79,7 @@ Dry-auto_inject depends of dry-configurable and dry-container. The dry-configura
 Let's check how it works.
 
 {% highlight shell %}
-~/projects/ruby/blog  bundle exec rails c
+~/projects/ruby/blog  bundle exec rails c
 Running via Spring preloader in process 5167
 Loading development environment (Rails 5.0.0.1)
 2.3.1 :001 >
@@ -129,7 +129,7 @@ For more details, you could check this [documentation][dry-container].
 Now, we need to create something to use dry-auto_inject. We will use scaffold to generate the Article model.
 
 {% highlight shell %}
- ~/projects/ruby/blog  rails g scaffold Article name:string description:string
+ ~/projects/ruby/blog  rails g scaffold Article name:string description:string
  Running via Spring preloader in process 6093
  invoke  active_record
  create    db/migrate/20161115123949_create_articles.rb
@@ -138,7 +138,7 @@ Now, we need to create something to use dry-auto_inject. We will use scaffold to
  create      test/models/article_test.rb
  ...
 
- ~/projects/ruby/blog  rake routes
+ ~/projects/ruby/blog  rake routes
  Prefix Verb   URI Pattern                  Controller#Action
  articles GET    /articles(.:format)          articles#index
  POST   /articles(.:format)          articles#create
@@ -149,7 +149,7 @@ Now, we need to create something to use dry-auto_inject. We will use scaffold to
  PUT    /articles/:id(.:format)      articles#update
  DELETE /articles/:id(.:format)      articles#destroy
 
- ~/projects/ruby/blog  rake db:migrate
+ ~/projects/ruby/blog  rake db:migrate
   == 20161115123949 CreateArticles: migrating ===================================
 -- create_table(:articles)
   -> 0.0015s
@@ -201,7 +201,7 @@ module Blog
 When you run rails console and call Commands::Article::Create#call, it's works!
 
 {% highlight ruby %}
- ~/projects/ruby/blog  rails c
+ ~/projects/ruby/blog  rails c
  Running via Spring preloader in process 10039
  Loading development environment (Rails 5.0.0.1)
  2.3.1 :001 > Commands::Article::Create.new.call(name: "AutoInject", description: "How can i use DryAutoInject")
