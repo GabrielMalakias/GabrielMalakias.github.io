@@ -26,7 +26,7 @@ But, if you already saw something like the code below, you already had a possibi
 {% highlight ruby %}
 class CreateArticle
   def initialize(repository = ArticleRepository.new)
-    this.repository = repository
+    self.repository = repository
   end
 
   def call(article)
