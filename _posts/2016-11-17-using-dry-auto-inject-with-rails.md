@@ -250,6 +250,7 @@ It`s works! To see how add tests, many cool things please check the [site][dry-r
 All code is available on my [github][dry-experiences].
 
 Thanks!
+
 #### References
 * http://dry-rb.org/;
 * http://trailblazer.to/gems/operation/1.1/;
