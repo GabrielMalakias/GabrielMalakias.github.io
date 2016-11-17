@@ -6,8 +6,6 @@ categories: ruby dry-rb rails
 disqus: true
 ---
 
-### Introduction
-
 Around of 2 or 3 months ago, I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code.
 
 Today in this post, I will try to show how we can use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), C#, or some language or framework with dependency-injection support you saw the amazing 'magic' of Dependency Injection(DI).
@@ -39,8 +37,7 @@ end
 
 In this case the class CreateArticle receives a external dependency and call repository method. The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you need to change the code implementation, you need to do changes only inside ArticleRepository. If you have some tool to inject the dependency automatically, this code can be more uncoupled and the responsability to know who implements, can be delegated to another part of code.
 
-### Starting
-
+#### Starting
 First, we need to install the development environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed, check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
 {% highlight shell %}
