@@ -1,6 +1,9 @@
 ---
 layout: post
+title: "Using dry-auto_inject with rails"
+date:   2016-11-17 12:00:00
 categories: ruby dry-rb rails
+disqus: true
 ---
 
 Hello, around 2 or 3 months ago I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code. "How can I use?". You can use your creativity, Dry-rb it's only one of many code possibilities.
