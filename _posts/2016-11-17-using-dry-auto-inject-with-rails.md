@@ -245,7 +245,7 @@ class ArticlesController < ApplicationController
       if @article.persisted?
 {% endhighlight %}
 
-It's works! To see how add tests, many cool things please check the [site][dry-rb].
+It`s works! To see how add tests, many cool things please check the [site][dry-rb].
 
 All code is available on my [github][dry-experiences].
 
