@@ -37,7 +37,7 @@ end
 
 In this case the class CreateArticle receives a external dependency and call repository method. The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you need to change the code implementation, most likely you need to change code inside CreateArticle and at place where it's called. If you have some tool to inject this automatically this code can be more uncoupled.
 
-First we need to install the environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
+First, we need to install the environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
 {% highlight shell %}
  ~/projects/ruby  ruby -v
