@@ -17,3 +17,6 @@ That's all I expect that blog can be helpful and I will try to have fun writing.
 
 Thanks!
 
+Contacts:
+[GitHub][https://github.com/GabrielMalakias]
+[LinkedIn][https://www.linkedin.com/in/gabriel07malakias]
