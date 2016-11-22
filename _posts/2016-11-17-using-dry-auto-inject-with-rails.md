@@ -6,7 +6,7 @@ categories: ruby dry-rb rails
 disqus: true
 ---
 
-Around of 2 or 3 months ago, I saw dry-rb at first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and improve code.
+Around of 2 or 3 months ago, I saw dry-rb at the first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and sometimes to do some code improvements.
 
 Today in this post, I will try to show how we can use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), C#, or some language or framework with dependency-injection support you saw the amazing 'magic' of Dependency Injection(DI).
 
@@ -16,7 +16,7 @@ You can see below an image to represent DI:
 
 ![dependency-injection]({{ site.url }}/assets/images/dependency_injection.png)
 
-I will not explain all details behind, this because many people already do it, as you see below:
+I will not explain all details behind this concept, because many people already do it as you see below:
 
 * [solnic][solnic-dependency-injection];
 * [martin-fowler][martin-fowler-dependency-injection].
@@ -98,7 +98,7 @@ Loading development environment (Rails 5.0.0.1)
   => #<Dry::Container:0x000000038bb200 @_container={"article_repository"=>#<Dry::Container::Item:0x000000034d0640 @item=#<Proc:0x000000034d06e0@(irb):43>, @options={:call=>true}>}>
 {% endhighlight %}
 
-When someone call Dry::Container#register with the identifier(:article_repository), the dependency is stored inside a proc. After that, when someone call Dry::Container#resolve with identifier(:article_repository) the proc stored previosly is executed or returned. The code inside proc can be executed immediately when resolve the reference or no, let's see the code below.
+When someone call Dry::Container#register with the identifier(:article_repository), the dependency is stored inside a proc. After that, when someone call Dry::Container#resolve with identifier(:article_repository) the proc stored previosly is executed or returned. The code inside proc can be executed immediately when resolve the reference or no, let's see how it works with the code below.
 
 {% highlight ruby %}
 2.3.1 :001 > container = Dry::Container.new
@@ -117,7 +117,7 @@ Hello
 => nil
 {% endhighlight %}
 
-And I can store namespaced identifiers.
+And we can store namespaced identifiers.
 {% highlight ruby %}
 2.3.1 :060 > container = Dry::Container.new
  => #<Dry::Container:0x00000003cebc08 @_container={}>
@@ -162,7 +162,7 @@ Now, we can see the created routes typing 'rake routes'.
  DELETE /articles/:id(.:format)      articles#destroy
 {% endhighlight %}
 
-Before run application, we need to create the table to store Articles.
+Before run application, we need to create the table to store all article entries.
 
 {% highlight shell %}
  ~/projects/ruby/blog  rake routes
@@ -217,7 +217,7 @@ module Blog
 Now you can run rails console and call Commands::Article::Create#call with params. An article should be created.
 
 {% highlight ruby %}
- ~/projects/ruby/blog  rails c
+ ~/projects/ruby/blog  rails console
  Running via Spring preloader in process 10039
  Loading development environment (Rails 5.0.0.1)
  2.3.1 :001 > Commands::Article::Create.new.call(name: "AutoInject", description: "How can i use DryAutoInject")
@@ -242,7 +242,7 @@ end
 AutoInject = Dry::AutoInject(Blog::Container)
 {% endhighlight %}
 
-In the last line of file, the constant AutoInject is defined, this constant will be used inside of ArticlesController to inject dependencies.
+At the last line of file, the constant AutoInject was defined, this constant will be used inside of ArticlesController to inject dependencies.
 
 To use the registered command, we need to include a reference to registered dependency. The code will be like this:
 

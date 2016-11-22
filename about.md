@@ -17,3 +17,10 @@ That's all I expect that blog can be helpful and I will try to have fun writing.
 
 Thanks!
 
+You can find me here:
+[GitHub][github]
+[LinkedIn][linkedin]
+
+
+[github]: https://github.com/GabrielMalakias
+[linkedin]: https://www.linkedin.com/in/gabriel07malakias
