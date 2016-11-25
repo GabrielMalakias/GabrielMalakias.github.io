@@ -11,7 +11,7 @@ paginate: 15
 baseurl: /
 domain_name: 'https://gabrielmalakias.github.io'
 google_analytics: 'UA-87321020-1'
-gems: [jekyll-paginate]
+gems: [jekyll-paginate, jekyll-seo-tag]
 
 url:            'https://gabrielmalakias.github.io'
 author:         'Gabriel Malaquias'

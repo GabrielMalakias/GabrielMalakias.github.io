@@ -263,7 +263,7 @@ class ArticlesController < ApplicationController
 
 Finally, you can test again to see DI working. To see how add tests and many cool things please check the [site][dry-rb].
 
-All code is available on my [github][dry-experiences].
+All code is available on my [github][experiences].
 
 Thanks!
 
@@ -278,7 +278,7 @@ Thanks!
 [rbenv]: https://github.com/rbenv/rbenv
 [dry-rb]: http://dry-rb.org/
 [dry-container]: http://dry-rb.org/gems/dry-container
-[dry-experiences]: https://github.com/GabrielMalakias/experiences
+[experiences]: https://github.com/GabrielMalakias/experiences
 [dry-configurable]: http://dry-rb.org/gems/dry-configurable
 [trailblazer-operation]: http://trailblazer.to/gems/operation/1.1/
 [solnic-dependency-injection]: http://solnic.eu/2013/12/17/the-world-needs-another-post-about-dependency-injection-in-ruby.html
