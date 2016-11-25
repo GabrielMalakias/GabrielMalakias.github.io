@@ -40,7 +40,7 @@ In this case the class CreateArticle receives a external dependency and call rep
 #### Starting
 First, we need to install the development environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed, check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
-{% highlight shell %}
+{% highlight bash %}
  ~/projects/ruby  ruby -v
 ruby 2.3.1p112 (2016-04-26 revision 54768) [x86_64-linux]
 
@@ -50,7 +50,7 @@ Rails 5.0.0.1
 
 After that, we can start! To do the experiments, we need a Rails application. To create a new App, type the command below. If you already has a Rails app, you can ignore this step.
 
-{% highlight shell %}
+{% highlight bash %}
 ~/projects/ruby  rails new blog
 create
 create  README.md
@@ -70,11 +70,11 @@ gem 'dry-auto_inject'
 
 And run
 
-{% highlight shell %}
+{% highlight bash %}
 bundle install
 {% endhighlight %}
 
-{% highlight shell %}
+{% highlight bash %}
 /projects/ruby/blog  bundle list | grep dry
   * dry-auto_inject (0.4.1)
   * dry-configurable (0.1.7)
@@ -85,7 +85,7 @@ Dry-auto_inject depends of dry-configurable and dry-container. The dry-configura
 
 Let's see how it works.
 
-{% highlight shell %}
+{% highlight bash %}
 ~/projects/ruby/blog  bundle exec rails c
 Running via Spring preloader in process 5167
 Loading development environment (Rails 5.0.0.1)
@@ -135,7 +135,7 @@ For more details, you could check this [documentation][dry-container].
 
 Now, we need to create something to use dry-auto_inject. We will use scaffold to generate the Article model.
 
-{% highlight shell %}
+{% highlight bash %}
  ~/projects/ruby/blog  rails g scaffold Article name:string description:string
  Running via Spring preloader in process 6093
  invoke  active_record
@@ -149,7 +149,7 @@ Now, we need to create something to use dry-auto_inject. We will use scaffold to
 
 Now, we can see the created routes typing 'rake routes'.
 
-{% highlight shell %}
+{% highlight bash %}
  ~/projects/ruby/blog  rake routes
  Prefix Verb   URI Pattern                  Controller#Action
  articles GET    /articles(.:format)          articles#index
@@ -164,7 +164,7 @@ Now, we can see the created routes typing 'rake routes'.
 
 Before run application, we need to create the table to store all article entries.
 
-{% highlight shell %}
+{% highlight bash %}
  ~/projects/ruby/blog  rake routes
  ~/projects/ruby/blog  rake db:migrate
   == 20161115123949 CreateArticles: migrating ===================================
@@ -278,7 +278,7 @@ Thanks!
 [rbenv]: https://github.com/rbenv/rbenv
 [dry-rb]: http://dry-rb.org/
 [dry-container]: http://dry-rb.org/gems/dry-container
-[dry-experiences]: https://github.com/GabrielMalakias/dry-experiences
+[dry-experiences]: https://github.com/GabrielMalakias/experiences
 [dry-configurable]: http://dry-rb.org/gems/dry-configurable
 [trailblazer-operation]: http://trailblazer.to/gems/operation/1.1/
 [solnic-dependency-injection]: http://solnic.eu/2013/12/17/the-world-needs-another-post-about-dependency-injection-in-ruby.html
