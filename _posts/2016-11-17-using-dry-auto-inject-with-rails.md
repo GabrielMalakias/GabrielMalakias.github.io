@@ -4,6 +4,7 @@ title: "Using dry-auto_inject with rails"
 date:   2016-11-17 12:00:00
 categories: ruby dry-rb rails
 disqus: true
+description: In this post, I will show what is a dependency injection how can we use this concept
 ---
 
 Around of 2 or 3 months ago, I saw dry-rb at the first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and sometimes to do some code improvements.
