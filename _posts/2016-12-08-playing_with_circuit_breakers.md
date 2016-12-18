@@ -211,7 +211,7 @@ end
 
 Run 'docker-compose up' or 'rails s', create a article and see if everything works as expected.
 
-Now we are prepared to put a stoplight inside our project. First thing to do is add the fail possibility. We will use the following code to determine if it will fail or no.
+Now we are ready to put a stoplight inside our project. First thing to do is add the fail possibility. We will use the following code to determine if it will fail or no.
 
 {% highlight ruby %}
 def fail?
