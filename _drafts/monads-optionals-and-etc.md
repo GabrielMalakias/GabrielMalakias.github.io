@@ -5,15 +5,15 @@ date:   2016-12-18 00:00:00
 categories: ruby java dry-monads optional
 ---
 
-Hello, I saw the "Monad" concept at first time at TDC(São Paulo) 2016 at the functional programming Track. I didn't get any use possibility in speech, but three months ago, I started to work in a Java project with two collegues, someday a senior job colleague convinced me to use java.util.Optional in some cases along this project "It's cool", he said. He already worked with Scala using some monadics built-in, then he knows the monads advantages.
+Hello, I saw the "Monad" concept at first time at TDC(São Paulo) 2016 at the functional programming Track. I didn't get any use possibility in speech, but three months ago, when I started to work in a Java project with two collegues, a senior job colleague convinced me to use java.util.Optional in some cases along this project "It's cool", he said. He already worked with Scala using some monadics built-in tools, then he knows the monads advantages.
 
-This project has many sequencial steps, the code majority has to validate something, convert to another type, save in database, send to a queue or something like it. After many sprints interactions, when it started to take form, the code did everything needed and kept all things simple basically composing a lot of Functions applied in Java Optional Objects.
+This project has many sequencial steps, the code majority has to validate something, convert to another type, save in database, send to a queue and so on. After many sprints interactions, when it started to take form, the code did everything needed keeping all things simple basically composing a lot of Functions applied in Java Optional Objects.
 
-After that, when I came back to Ruby, I started to search some gem with the similar behavior, I googled it and I found Dry-Monads inspired by [Kleisli][kleisli]. When I visited the Kleisli page I saw this phrase "You can use Haskell-like function composition with F and the familiar", I thought "Oh my Gosh, I got Monads now". Moments later, I found a cool post in Quora website about Monads, it's different(and cool) because don't envolves a huge number of mathematical formulas to explain the Monads concept, you can take a look [here][quora], they use Haskell in examples, I don't know Haskell but when if you compare to Dry-monads you will understand too.
+After that, when I came back to Ruby, I started to search some gem with the similar behavior, I googled it and I found Dry-Monads inspired by [Kleisli][kleisli]. When I visited the Kleisli page I saw this phrase "You can use Haskell-like function composition with F and the familiar", I thought "Oh my Gosh, I got Monads now". Moments later, I found a cool post in Quora website about Monads, it's different(and cool) because don't envolves a huge number of mathematical formulas to explain the Monads concept, you can take a look [here][quora]. He uses Haskell in examples, I don't know Haskell but when if you compare to Dry-monads you will understand too.
 
 #### Intro
 
-Everyone that already programmed in Java, at least once, got an NullPointerException. This error occurs when someone call a function of a null reference.
+Everyone that already programmed in Java, at least once, got an NullPointerException. This error occurs when someone call a function to null reference.
 
 {% highlight java %}
 null.toString();
@@ -35,9 +35,9 @@ NoMethodError: undefined method `bla' for nil:NilClass
     from /home/gabriel/.rvm/rubies/ruby-2.3.1/bin/irb:11:in `<main>'
 {% endhighlight %}
 
-Ruby return an exception when we try to call an inexistent attribute or method, but when we call '.to_s' it returns a blank string. If we use Java, when we call any method it will return an "NullPointerException".
+Ruby return an exception when we try to call an inexistent attribute or method, but when we call '.to_s' it returns a blank string. If we use Java, when we call any method to null, it will return an "NullPointerException".
 
-Since Java 8, we have the java.util.Optional, it can be useful to return an empty string when we use a null reference. Let's see the example below:
+Since Java 8, we have the java.util.Optional, it can be useful in this case, to return an empty string when we use a null reference. Let's see the example below:
 
 {% highlight java %}
 java.util.Optional.ofNullable(null).map(Object::toString).orElse("");
@@ -46,7 +46,7 @@ java.util.Optional.ofNullable(null).map(Object::toString).orElse("");
 ""
 {% endhighlight %}
 
-It's extremely useful to avoid Java NullPointerException. Another cool thing is chain methods, it's possible using some functions as '#map' and '#flatMap'. We can also use the Optional behavior to avoid 'if' sequences and we can to turn our code more readable using the same text way. In Elixir we can chain methods using the pipe operator '\|>', let's check it.
+It's extremely useful to avoid Java NullPointerException. Another cool thing is the chain methods possibility, we can do it using some functions as '#map' and '#flatMap'. We can also use the Optional behavior to avoid 'if' sequences and we can to turn our code more readable using the same text way. In Elixir we can chain methods using the pipe operator '\|>', let's check it.
 
 {% highlight elixir %}
 "Some String" |> String.upcase
@@ -258,7 +258,23 @@ class Order
 end
 {% endhighlight %}
 
-Let's try the new version
+We used Maybe in this case to get an Optional behavior. It will return None if we pass null or Some in non null cases as the code below.
+
+{% highlight ruby %}
+2.3.1 :003 > Dry::Monads::Maybe(nil)
+=> None
+2.3.1 :004 > Dry::Monads::Maybe(1)
+=> Some(1)
+{% endhighlight %}
+
+
+The bind function was used to apply a function in object. We can use it to do an Upcase like previously.
+2.3.1 :003 > Dry::Monads::Maybe("Bla").bind(->(str) { str.upcase })
+=> "BLA"
+irb(main):006:0> Dry::Monads::Maybe("Bla").bind(&:upcase)
+=> "BLA"
+
+Then let's try the new version
 
 {% highlight ruby %}
 2.3.1 :009 > order = Order.new
