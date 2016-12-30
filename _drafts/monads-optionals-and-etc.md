@@ -11,7 +11,7 @@ This project has many sequencial steps, the code majority has to validate someth
 
 After that, when I came back to Ruby, I started to search some gem with the similar behavior, I googled it and I found Dry-Monads inspired by [Kleisli][kleisli]. When I visited the Kleisli page I saw this phrase "You can use Haskell-like function composition with F and the familiar", I thought "Oh my Gosh, I got Monads now". Moments later, I found a cool post in Quora website about Monads, it's different(and cool) because don't envolves a huge number of mathematical formulas to explain the Monads concept, you can take a look [here][quora], they use Haskell in examples, I don't know Haskell but when if you compare to Dry-monads you will understand too.
 
-#### Intro
+#### Introduction
 
 Everyone that already programmed in Java, at least once, got an NullPointerException. This error occurs when someone call a function of a null reference.
 
