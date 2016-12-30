@@ -1,11 +1,11 @@
 ---
 layout: post
 title: 'OO programmers, Monads may be useful to us too'
-date:   2016-12-18 00:00:00
-categories: ruby java dry-monads optional
+date:   2016-12-29 00:00:00
+categories: ruby dry-monads code-style
 ---
 
-Hello, I saw the "Monad" concept at first time at TDC(São Paulo) 2016 at the functional programming Track. I didn't get any use possibility in speech, but three months ago, when I started to work in a Java project with two collegues, a senior job colleague convinced me to use java.util.Optional in some cases along this project "It's cool", he said. He already worked with Scala using some monadics built-in tools, then he knows the monads advantages.
+Hello, I saw the "Monad" concept at first time at TDC(São Paulo) 2016 at the functional programming Track. I didn't get any use possibility in speech (maybe because I don't know Haskell), but three months ago, when I started to work in a Java project with two collegues, a senior job colleague convinced me to use java.util.Optional in some cases along this project "It's cool", he said. He already worked with Scala using some monadics built-in tools, then he knows the monads advantages.
 
 This project has many sequencial steps, the code majority has to validate something, convert to another type, save in database, send to a queue and so on. After many sprints interactions, when it started to take form, the code did everything needed keeping all things simple basically composing a lot of Functions applied in Java Optional Objects.
 
@@ -258,7 +258,7 @@ class Order
 end
 {% endhighlight %}
 
-We used Maybe in this case to get an Optional behavior. It will return None if we pass null or Some in non null cases as the code below.
+We used Maybe in this case to get an Optional behavior. It will return None if we pass null or Some in non null cases as code below.
 
 {% highlight ruby %}
 2.3.1 :003 > Dry::Monads::Maybe(nil)
@@ -267,12 +267,14 @@ We used Maybe in this case to get an Optional behavior. It will return None if w
 => Some(1)
 {% endhighlight %}
 
-
 The bind function was used to apply a function in object. We can use it to do an Upcase like previously.
-2.3.1 :003 > Dry::Monads::Maybe("Bla").bind(->(str) { str.upcase })
+
+{% highlight ruby %}
+2.3.1 :005 > Dry::Monads::Maybe("Bla").bind(->(str) { str.upcase })
 => "BLA"
-irb(main):006:0> Dry::Monads::Maybe("Bla").bind(&:upcase)
+2.3.1 :006 >Dry::Monads::Maybe("Bla").bind(&:upcase)
 => "BLA"
+{% endhighlight %}
 
 Then let's try the new version
 
@@ -350,6 +352,15 @@ end
 
 {% endhighlight %}
 
+The code above used a #fmap function, it works like the bind function but it wrap the result into Some. The #fmap function returns None if applied in a None object. It works like the example below.
+
+{% highlight ruby %}
+2.3.1 :003 > Dry::Monads::Some("Bla").fmap(&:upcase)
+ => Some("BLA")
+ 2.3.1 :005 > Dry::Monads::Maybe(nil).fmap(&:upcase)
+ => None
+{% endhighlight %}
+
 It's cool, but now we need to add another feature. If our order doesn't has products, we don't need to calculate the total in these cases, then we can add this behavior using the 'Either mixin'. Let's see how we can use it. We will create a new command class 'Commands::Order::Total' and use it to calculate the order price.
 
 {% highlight ruby %}
@@ -403,7 +414,6 @@ class Commands::Order::Total
   end
 end
 
-
 /* Some examples */
 
 2.3.1 :001 > order = Order.new
@@ -429,6 +439,8 @@ end
 2.3.1 :011 > calc.call order
 => Some(27.45434887890415)
 {% endhighlight %}
+
+The Dry-Monads page describe Left and right as *"The Right can be thought of as “everything went right” and the Left is used when “something has gone wrong.”*. Left is something like an exception, then when we have a function that returns Left the next chain function isn't executed. Right is used when we have an expected result, then it can pass to next chain function.
 
 It works! but the code returns None, Some or Left in some cases. If we use only Left and right we can check if we had success or no. Another thing is the sum of prices can be negative, we can return an failure if it occurs. Let's make some changes.
 
