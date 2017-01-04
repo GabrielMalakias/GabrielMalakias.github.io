@@ -225,7 +225,7 @@ class Product
   end
 
   def price
-    Dry::Monads::Maybe(@price).or(Dry::Monads::Some(0))
+    Dry::Monads::Maybe(@price)
   end
 end
 
@@ -233,7 +233,7 @@ end
 
 class Order
   def total
-    products.bind(-> (products) { products.map { |p| p.price.value }.reduce(:+) - discount.value })
+    products.bind(-> (products) { products.map { |p| p.price.value_or(0) }.reduce(:+) - discount.value_of(0) })
   end
 
   def add_product(product)
@@ -245,7 +245,7 @@ class Order
   end
 
   def discount
-    Dry::Monads::Maybe(@discount).or(Dry::Monads::Some(0))
+    Dry::Monads::Maybe(@discount)
   end
 
   def products=(value)
@@ -301,7 +301,7 @@ It's works, but the total function isn't readable, we can improve it, but first,
 {% highlight ruby %}
   def total
     products
-      .bind(-> (products) { products.map { |p| p.price.value }.reduce(:+) - discount.value })
+      .bind(-> (products) { products.map { |p| p.price.value_or(0) }.reduce(:+) - discount.value_of(0) })
   end
 {% endhighlight %}
 
@@ -338,7 +338,7 @@ class Order
   private
 
   def collect_prices
-    -> (products) { products.map { |p| p.price.value } }
+    -> (products) { products.map { |p| p.price.value_of(0) } }
   end
 
   def sum
@@ -401,7 +401,7 @@ class Commands::Order::Total
   def collect_prices
     -> (products) {
       return Left('You should add products') if products.empty?
-      Right(products.map { |p| p.price.value })
+      Right(products.map { |p| p.price.value_or(0) })
     }
   end
 
@@ -460,7 +460,7 @@ class Commands::Order::Total
   def collect_prices
     -> (products) {
       return Left('You should add products') if products.empty?
-      Right(products.map { |p| p.price.value })
+      Right(products.map { |p| p.price.value_or(0) })
     }
   end
 
