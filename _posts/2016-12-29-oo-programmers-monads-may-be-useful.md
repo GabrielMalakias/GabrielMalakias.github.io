@@ -3,6 +3,7 @@ layout: post
 title: 'OO programmers, Monads may be useful to us too'
 date:   2016-12-29 00:00:00
 categories: ruby dry-monads code-style
+disqus: true
 ---
 
 Hello, I saw the "Monad" concept at first time at TDC(São Paulo) 2016 at the functional programming Track. I didn't get any use possibility in speech (maybe because I don't know Haskell), but three months ago, when I started to work in a Java project with two collegues, a senior job colleague convinced me to use java.util.Optional in some cases along this project "It's cool", he said. He already worked with Scala using some monadics built-in tools, then he knows the monads advantages.
