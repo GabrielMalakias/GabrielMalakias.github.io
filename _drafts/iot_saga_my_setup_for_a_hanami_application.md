@@ -11,9 +11,7 @@ Hello, Today I'm gonna talk about Hanami, I really wish to use it, them I decide
 
 ### Introduction
 
-Basically I'm going to show how I made my setup to a new Hanami application. Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].
-
-I decided to use Docker because I like it :) and it turn easier to setup and run applications, it encapsulates an environment inside of a container to run a code I want.
+Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].* Ok now I have an framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications. With Docker we can encapsulate all environment inside a container.
 
 A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
 
