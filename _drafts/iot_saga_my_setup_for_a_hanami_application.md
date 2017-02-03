@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "IoT Saga - My first setup for a hanami application"
+title: "IoT Saga - My first (to development) setup for a hanami application"
 date:   2017-01-31 12:00:00
 categories: iot hanami docker
 disqus: true
@@ -35,14 +35,13 @@ hanami new space_wing --database=postgresql
 
 #### 1. Running on Docker
 
-To run Docker first we need to install it, we will want docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker at the [site][docker].
+To run Docker first we need to install it, we will want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker and compose at the [docker website][docker].
 
-Afterwards, we can run it to check docker version.
+After install, we need to check the docker version.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) docker --version
 Docker version 1.12.1, build 23cf638
-
 {% endhighlight %}
 
 *Ps:. Currently it's stable version but you can use superior versions.*
@@ -115,6 +114,29 @@ And then I got it:
 ![welcome_to_hanami]({{ site.url }}/assets/images/welcome_to_hanami.png)
 
 Cool, right?
+
+#### 2. Adding some scripts
+
+In docker-compose I added this line:
+
+{% highlight yml %}
+command: bundle exec hanami s --host '0.0.0.0'
+{% endhighlight %}
+
+This command is responsible to run my app, If I'm at phoenix for example I need to run something like the line below.
+
+{% highlight sh %}
+mix phoenix.server
+{% endhighlight %}
+
+Then we need to remember *"how can I run my server?", "how can I execute tests?", "how can I do all setup to my application?".* If I have some migrations, I need to create the database and run migrations.
+Afterwards, I can forgot to initialize git submodules If I have any. I need to remember what command I need to run to install my dependencies and so on.
+
+Now, imagine when you have a codebase with many languages, You can spend a lots of time only remembering how do the setup for the application before start some task. It's a caos.
+
+This github project has a mission to do some tips to automate some common tasks in your project, we can use it for any language or framework following only the idea of each one script.
+
+
 
 ### References
 
