@@ -11,12 +11,16 @@ Hello, Today I'm gonna talk about Hanami, I really wish to use it, them I decide
 
 ### Introduction
 
-Basically I'm going to show how I made my setup to a new Hanami application. Hanami is an modular web frameworks that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first]. Docker turn easier to setup an run applications, it encapsulates an environment inside of a container to run a code I want. I'm going to use it too. A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind only the script concept for every project.
+Basically I'm going to show how I made my setup to a new Hanami application. Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].
+
+I decided to use Docker because I like it :) and it turn easier to setup and run applications, it encapsulates an environment inside of a container to run a code I want.
+
+A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
 
 ### Starting
 
 ##### 0. Creating an Hanami application
-The first thing to do is create an application that we what to run, we can do it running this command to create an application:
+After the hanami installation (running 'gem install hanami'), the first thing to do is create an application that we want to run, we can do it running this command to create an application:
 
 {% highlight ruby %}
 
@@ -36,7 +40,7 @@ To run Docker first we need to install it, we will want docker and docker-compos
 Afterwards, we can run it to check docker version.
 
 {% highlight shell %}
-~/projects/space_wing(master ✔) docker --version
+~/projects/space_wing(dev ✔) docker --version
 Docker version 1.12.1, build 23cf638
 
 {% endhighlight %}
@@ -46,10 +50,71 @@ Docker version 1.12.1, build 23cf638
 We need an file called 'Dockerfile' to specify all steps to build our application image, so we will start creating it.
 
 {% highlight shell %}
-~/projects/space_wing(master ✔) touch Dockerfile
+~/projects/space_wing(dev ✔) touch Dockerfile
+
+#Dockerfile content
+FROM ruby:2.3.3
+
+RUN mkdir /space_wing
+WORKDIR /space_wing
+
+ADD Gemfile .
+ADD Gemfile.lock .
+
+RUN bundle install
+
+ADD . /space_wing
+
 {% endhighlight %}
 
+After that I can use the command 'docker build .' to create a image with my application inside it, so we need to build all dependencies like the database and link with our dockerized application, to do it we need to create a file called 'docker-compose.yml'. This file is responsible to build all dependencies and the network between all images. Then let's create it.
 
+{% highlight shell %}
+~/projects/space_wing(dev ✔) touch docker-compose.yml
+
+
+{% endhighlight %}
+
+{% highlight yml %}
+#docker-compose.yml content
+version: '2'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: spacewing_development
+      POSTGRES_USER: spacewing
+      POSTGRES_PASSWORD: inicial1234
+  web:
+    build: .
+    env_file:
+      - .env
+    command: bundle exec hanami s --host '0.0.0.0'
+    volumes:
+      - .:/space_wing
+    ports:
+      - "2300:2300"
+    depends_on:
+      - db
+
+{% endhighlight %}
+
+And the .env file to store my connection variable
+
+{% highlight shell %}
+~/projects/space_wing(dev ✔) touch .env
+
+#.env content
+DATABASE_URL=postgres://spacewing:inicial1234@db/spacewing_development
+
+{% endhighlight %}
+
+And then I got it:
+
+![welcome_to_hanami]({{ site.url }}/assets/images/welcome_to_hanami.png)
+
+Cool, right?
 
 ### References
 
