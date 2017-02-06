@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "IoT Saga - My first setup for a hanami application"
+title: "IoT Saga - My first (to development) setup for a hanami application"
 date:   2017-01-31 12:00:00
 categories: iot hanami docker
 disqus: true
@@ -13,9 +13,7 @@ The first post is about the high level application, responsible to send and rece
 
 ### Introduction
 
-Basically I'm going to show how I made my setup to a new Hanami application. Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].
-
-I decided to use Docker because I like it :) and it turn easier to setup and run applications, it encapsulates an environment inside of a container to run a code I want.
+Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].* Ok now I have an framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications. With Docker we can encapsulate all environment inside a container.
 
 A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
 
@@ -37,14 +35,13 @@ hanami new space_wing --database=postgresql
 
 #### 1. Running on Docker
 
-To run Docker first we need to install it, we will want docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker at the [site][docker].
+To run Docker first we need to install it, we will want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker and compose at the [docker website][docker].
 
-Afterwards, we can run it to check docker version.
+After install, we need to check the docker version.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) docker --version
 Docker version 1.12.1, build 23cf638
-
 {% endhighlight %}
 
 *Ps:. Currently it's stable version but you can use superior versions.*
@@ -117,6 +114,29 @@ And then I got it:
 ![welcome_to_hanami]({{ site.url }}/assets/images/welcome_to_hanami.png)
 
 Cool, right?
+
+#### 2. Adding some scripts
+
+In docker-compose I added this line:
+
+{% highlight yml %}
+command: bundle exec hanami s --host '0.0.0.0'
+{% endhighlight %}
+
+This command is responsible to run my app, If I'm at phoenix for example I need to run something like the line below.
+
+{% highlight sh %}
+mix phoenix.server
+{% endhighlight %}
+
+Then we need to remember *"how can I run my server?", "how can I execute tests?", "how can I do all setup to my application?".* If I have some migrations, I need to create the database and run migrations.
+Afterwards, I can forgot to initialize git submodules If I have any. I need to remember what command I need to run to install my dependencies and so on.
+
+Now, imagine when you have a codebase with many languages, You can spend a lots of time only remembering how do the setup for the application before start some task. It's a caos.
+
+This github project has a mission to do some tips to automate some common tasks in your project, we can use it for any language or framework following only the idea of each one script.
+
+
 
 ### References
 
