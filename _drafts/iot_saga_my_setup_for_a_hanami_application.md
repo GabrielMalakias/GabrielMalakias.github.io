@@ -7,7 +7,9 @@ disqus: true
 description: In this post, I will show what is a dependency injection how can we use this concept
 ---
 
-Hello, Today I'm gonna talk about Hanami, I really wish to use it, them I decided to create an project to combine everything that I want to learn. I intend to do a saga covering my journey to complete it.
+Hello, Today I'm gonna talk about Hanami, I really wish to use it, them I decided to create an project to combine everything that I want to learn. I intend to do a saga covering my journey to complete it. I intend to use some technologies like MQTT and RXTX to do the communication with my Arduino and after that an application to execute some commands on my board, this saga is inspired by [it][mqtt-sergioaugrod], but I decided to use different tools, languages or frameworks to get some new knowledge.
+
+The first post is about the high level application, responsible to send and receive all commands, I intend to make it like a dashboard where I can put commands, indicators and other things.
 
 ### Introduction
 
@@ -123,7 +125,10 @@ Cool, right?
 * https://github.com/github/scripts-to-rule-them-all
 * https://github.com/hanami/hanami/blob/master/lib/hanami/commands/new/app.rb
 * http://hanamirb.org
+* https://www.sergioaugrod.com.br/iot-arduino-serial-e-mqtt/
 
+
+[mqtt-sergioaugrod]: https://www.sergioaugrod.com.br/iot-arduino-serial-e-mqtt/
 [hanami]: http://hanamirb.org
 [command_new]: https://github.com/hanami/hanami/blob/master/lib/hanami/commands/new/app.rb
 [monotith_first]: https://martinfowler.com/bliki/MonolithFirst.html
