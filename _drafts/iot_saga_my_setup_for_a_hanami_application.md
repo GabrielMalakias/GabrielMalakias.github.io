@@ -137,6 +137,10 @@ Now, imagine when you have a codebase with many languages, You can spend a lots 
 This github project has a mission to do some tips to automate some common tasks in your project, we can use it for any language or framework following only the idea of each one script.
 
 
+###### 2.1 Testing script
+
+Let's create a folder to store all scripts, and then add the script responsible to run our tests.
+
 
 ### References
 
