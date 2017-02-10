@@ -137,9 +137,54 @@ Now, imagine when you have a codebase with many languages, You can spend a lots 
 This github project has a mission to do some tips to automate some common tasks in your project, we can use it for any language or framework following only the idea of each one script.
 
 
-###### 2.1 Testing script
+###### 2.1 Script to run tests
 
 Let's create a folder to store all scripts, and then add the script responsible to run our tests.
+
+{% highlight shell %}
+~/projects/space_wing(dev ✔) mkdir script
+~/projects/space_wing(dev ✔) touch ./script/bootstrap
+~/projects/space_wing(dev ✔) touch ./script/test
+
+# bootstrap script content
+#!/bin/sh
+
+# script/bootstrap: Resolve all dependencies that the application requires to
+#                   run.
+
+echo "==> Building and solving dependencies…"
+
+if command -v docker-compose >/dev/null 2>&1; then
+    docker-compose build
+else
+    echo "==> Please install docker first"
+fi
+
+# test script content
+#!/bin/sh
+# script/test: Run test suite for application. Optionally pass in a path to an
+#              individual test file to run a single test.
+
+echo "==> Running tests…"
+
+./script/bootstrap
+
+if [ -n "$1" ]; then
+  docker-compose run web rake test "$1"
+else
+  docker-compose run web rake test
+fi
+{% endhighlight %}
+
+This script is resposible to run a all or a single test, to execute it tests we need to use './script/test' to execute all tests or './script/test <file-test-path>' to run an single test.
+
+###### 2.2 Script to run server
+
+As the same example above to add it, we need to create an file and run './script/server', I used the script below to execute server inside the container.
+
+{% highlight shell %}
+
+~/projects/space_wing(dev ✔) touch ./script/test
 
 
 ### References
