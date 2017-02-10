@@ -13,9 +13,9 @@ The first post is about the high level application, responsible to send and rece
 
 ### Introduction
 
-Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].* Ok now I have an framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications. With Docker we can encapsulate all environment inside a container.
+Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a *modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].* Ok now I have a framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications and it can encapsulate all environment inside a container.
 
-A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
+A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run some script inside a folder to test, run and build.
 
 ### Starting
 
@@ -35,9 +35,9 @@ hanami new space_wing --database=postgresql
 
 #### 1. Running on Docker
 
-To run Docker first we need to install it, we will want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker and compose at the [docker website][docker].
+To run Docker first we need to install it, we want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check do it at the [docker website][docker].
 
-After install, we need to check the docker version.
+After install, we can check the installation.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) docker --version
@@ -46,7 +46,7 @@ Docker version 1.12.1, build 23cf638
 
 *Ps:. Currently it's stable version but you can use superior versions.*
 
-We need an file called 'Dockerfile' to specify all steps to build our application image, so we will start creating it.
+We need a file called 'Dockerfile' to specify all steps to build our application image, so let's create it.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) touch Dockerfile
@@ -66,7 +66,7 @@ ADD . /space_wing
 
 {% endhighlight %}
 
-After that I can use the command 'docker build .' to create a image with my application inside it, so we need to build all dependencies like the database and link with our dockerized application, to do it we need to create a file called 'docker-compose.yml'. This file is responsible to build all dependencies and the network between all images. Then let's create it.
+After that I can use the command 'docker build .' to create a image with my application inside it, so we need to build all dependencies like the database and link with our dockerized application, to do it we need to create a file called 'docker-compose.yml'. This file is responsible to build all dependencies and the network between all images, then let's create it.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) touch docker-compose.yml
