@@ -186,6 +186,20 @@ As the same example above, now, we need to create an file responsible to run the
 
 ~/projects/space_wing(dev ✔) touch ./script/server
 
+# server script content
+#!/bin/sh
+# script/server: Launch the application and any extra required processes
+#                locally.
+set -e
+cd "$(dirname "$0")/.."
+
+echo ">>> Starting application..."
+
+if command -v docker-compose >/dev/null 2>&1; then
+  docker-compose up
+else
+  echo "==> Please install docker first"
+fi
 {% endhighlight %}
 
 ### References
