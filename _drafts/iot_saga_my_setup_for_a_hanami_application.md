@@ -13,14 +13,14 @@ The first post is about the high level application, responsible to send and rece
 
 ### Introduction
 
-Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].* Ok now I have an framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications. With Docker we can encapsulate all environment inside a container.
+Basically, I'm going to show how I made my setup basic development to a new Hanami application, but first what's Hanami? My definition is Hanami is a modular web framework that allows you to do applications decoupled based on [Clean Architeture][clean_architeture] and [Monolith First][monotith_first].*. Ok, now I have the framework, but I don't need to install all dependencies at my machine then I asked myself. *"How can I simplify my setup?"* then I decided to use Docker because I like it :) and it turns easier to setup and run applications. With Docker we can encapsulate all environment inside a container.
 
-A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's good because you can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
+A good tip gave by a colleague is [Scripts to rule them all][script_rule_them_all], it's convenient because following your rules we can use it as a convention to run projects in different languages and frameworks keeping on mind we need only to run a script inside a folder to test, run and build.
 
 ### Starting
 
 ##### 0. Creating an Hanami application
-After the hanami installation (running 'gem install hanami'), the first thing to do is create an application that we want to run, we can do it running this command to create an application:
+After the hanami installation (running 'gem install hanami'), the first thing to do is create an application that we want to run, we can do it running the command below.
 
 {% highlight ruby %}
 
@@ -35,9 +35,9 @@ hanami new space_wing --database=postgresql
 
 #### 1. Running on Docker
 
-To run Docker first we need to install it, we will want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check all proceds to install docker and compose at the [docker website][docker].
+To run Docker first we need to install it, we will want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check how install docker and compose at the [docker website][docker].
 
-After install, we need to check the docker version.
+After installation, we need to check the docker version.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) docker --version
@@ -46,7 +46,7 @@ Docker version 1.12.1, build 23cf638
 
 *Ps:. Currently it's stable version but you can use superior versions.*
 
-We need an file called 'Dockerfile' to specify all steps to build our application image, so we will start creating it.
+We need the file called 'Dockerfile' to specify all steps to build our application image, so we are going to start creating it.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) touch Dockerfile
@@ -66,11 +66,10 @@ ADD . /space_wing
 
 {% endhighlight %}
 
-After that I can use the command 'docker build .' to create a image with my application inside it, so we need to build all dependencies like the database and link with our dockerized application, to do it we need to create a file called 'docker-compose.yml'. This file is responsible to build all dependencies and the network between all images. Then let's create it.
+After that we can use the command 'docker build .' to create a image with my application inside it. We also need to build all dependencies like the database and link between all containers, to do it we need to create the file called 'docker-compose.yml'. This file is responsible to build all dependencies and the network between all containers. Then let's create it.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) touch docker-compose.yml
-
 
 {% endhighlight %}
 
@@ -99,7 +98,7 @@ services:
 
 {% endhighlight %}
 
-And the .env file to store my connection variable
+And the .env file to store my environment variables, in your case a database string connection.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) touch .env
@@ -109,37 +108,38 @@ DATABASE_URL=postgres://spacewing:inicial1234@db/spacewing_development
 
 {% endhighlight %}
 
-And then I got it:
+And when we run 'docker-compose up', we got it:
 
 ![welcome_to_hanami]({{ site.url }}/assets/images/welcome_to_hanami.png)
 
-Cool, right?
+It's cool, right?
 
 #### 2. Adding some scripts
 
-In docker-compose I added this line:
+In docker-compose we added this line:
 
 {% highlight yml %}
 command: bundle exec hanami s --host '0.0.0.0'
 {% endhighlight %}
 
-This command is responsible to run my app, If I'm at phoenix for example I need to run something like the line below.
+This command is responsible to run the app. If I'm at phoenix application for example we need to write a command like below.
 
 {% highlight sh %}
-mix phoenix.server
+command: mix phoenix.server
 {% endhighlight %}
 
-Then we need to remember *"how can I run my server?", "how can I execute tests?", "how can I do all setup to my application?".* If I have some migrations, I need to create the database and run migrations.
+However we need to remember *"how can I run my server?", "how can I execute tests?", "how can I do all setup to my application?".* If I have some migrations, I need to create the database and run migrations.
 Afterwards, I can forgot to initialize git submodules If I have any. I need to remember what command I need to run to install my dependencies and so on.
 
-Now, imagine when you have a codebase with many languages, You can spend a lots of time only remembering how do the setup for the application before start some task. It's a caos.
+Now, imagine when we have a codebase with many languages, we can spend much time only remembering how do the setup for the application before start some task. From my point of view it's a caos.
 
-This github project has a mission to do some tips to automate some common tasks in your project, we can use it for any language or framework following only the idea of each one script.
+
+One of possible solutions comes from [Script rule then all][script_rule_them_all]. It has a mission to do show some tips to how automate some common tasks in your project, we can use it for any language or framework keeping on mind only the idea behind that.
 
 
 ###### 2.1 Script to run tests
 
-Let's create a folder to store all scripts, and then add the script responsible to run our tests.
+Let's create a folder to store all scripts, and then we need to add two scripts, one is responsible to install the dependencies and the another one is responsible to run our tests.
 
 {% highlight shell %}
 ~/projects/space_wing(dev ✔) mkdir script
@@ -176,16 +176,17 @@ else
 fi
 {% endhighlight %}
 
-This script is resposible to run a all or a single test, to execute it tests we need to use './script/test' to execute all tests or './script/test <file-test-path>' to run an single test.
+The script 'test' is resposible to run tests, to execute it, we need to run './script/test' or './script/test <file-test-path>' to run an single test.
 
 ###### 2.2 Script to run server
 
-As the same example above to add it, we need to create an file and run './script/server', I used the script below to execute server inside the container.
+As the same example above, now, we need to create an file responsible to run the server. We can use the script below to execute server inside the container.
 
 {% highlight shell %}
 
-~/projects/space_wing(dev ✔) touch ./script/test
+~/projects/space_wing(dev ✔) touch ./script/server
 
+{% endhighlight %}
 
 ### References
 
