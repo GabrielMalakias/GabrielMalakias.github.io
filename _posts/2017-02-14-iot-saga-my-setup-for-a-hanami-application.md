@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "IoT Saga - My first (for development) setup for a hanami application"
+title: "IoT Saga - Part 1 - My first (for development) setup for a hanami application"
 date:   2017-02-14 12:00:00
 categories: hanami iot docker
 disqus: true
