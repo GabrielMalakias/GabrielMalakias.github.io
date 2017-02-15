@@ -37,7 +37,7 @@ hanami new space_wing --database=postgresql
 
 #### 1. Running on Docker
 
-To run Docker first we need to install it, we want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check do it at the [docker website][docker_install].
+To run Docker first we need to install it, we want to install docker and docker-compose, but I won't cover installation here to simplify this post, but you can check how do it at the [docker website][docker_install].
 
 After installation, we can check it.
 
