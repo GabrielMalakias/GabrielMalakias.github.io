@@ -1,12 +1,13 @@
 ---
 layout: post
-title: ' programmers, Monads may be useful to us too'
-date:   2016-12-29 00:00:00
-categories: ruby hanami code-style
+title: "IoT Saga - Part 2 - Starting the dashboard: My first impressions about hanami"
+date:   2017-03-17 12:00:00
+categories: ruby dry-rb rails
 disqus: true
+description: I intend to show some good points to choose Hanami as Framework
 ---
 
-
+Hello everyone, Today I'm gonna talk about Hanami from my point of view a awesome Framework that allows to you learn a bunch of new things. My first language at university was Java, all professors made me learn a lot of Software Engineering and Design Patterns, I enjoyed so much it. When I decided to learn Ruby, I saw the amazing powers of ActiveRecord and the Metaprogramming powers I was so excited but with great powers comes great responsabilities. I think Rails is great, this incredible framework allows to you build things very fast but the some applications that I worked could be better with using a different mindset.
 
 Well, I usually saw examples like the following diagram at university:
 

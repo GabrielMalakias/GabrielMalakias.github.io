@@ -138,7 +138,7 @@ Afterwards, I can forgot to initialize git submodules If I have any. I need to r
 Now, imagine when we have a codebase with many languages, we can spend much time only remembering how do the setup for the application before start some task. From my point of view it's a caos.
 
 
-One of possible solutions comes from [Script rule them all][script_rule_them_all]. It has a mission to do show some tips to automate some common tasks in your project, we can use it for any language or framework keeping on mind only the main idea behind that.
+One of possible solutions comes from [Script rule them all][script_rule_them_all]. It has a mission to show some tips to automate some common tasks in your project, we can use it for any language or framework keeping on mind only the main idea behind that.
 
 
 ###### 2.1 Script to run tests
