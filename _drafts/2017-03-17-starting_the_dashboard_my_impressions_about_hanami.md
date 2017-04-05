@@ -20,7 +20,7 @@ Well, I usually saw examples like the following diagram at college:
 ![dao-java]({{ site.url }}/assets/images/java_dao_example.gif)
 http://www.corej2eepatterns.com/DataAccessObject.htm
 
-Now I can remember how is boring to write all DAO implementations but I was just starting, by the time I didn't knew any technology capable to it by itself. After that I learnt just a little of SpringJPA and also when I was learning it I saw this kind of code:
+Now I can remember how is boring to write all DAO(Data Acess Object) implementations but I was just starting, by the time I didn't know any technology capable to it by itself. After that I learnt just a little of SpringJPA and also when I was learning it I saw something like the following code:
 
 ```java
 public interface UserRepository extends CrudRepository<User, Long> {
@@ -44,9 +44,18 @@ We can create models and repositories using the following command:
       create  spec/usgard/entities/blargh_spec.rb
       create  spec/usgard/repositories/blargh_repository_spec.rb
 
+From my point of view the DAO use is really good because we can remove the responsability to manage our database from models. This mindset can keep our models more Thin and can guide us to Single Responsability principle.
+
 ##### 2. Views
 
-Using Rails is common use Helpers to create anything you want to do inside template and all methods are shared in all application. Well, using Hanami we have Views Layer the Hanami definition for Views is that:
+Using Rails is common use Helpers to create anything you want to do inside template however this custom methods are shared in all application.
+
+"The Rails framework provides a large number of helpers for working with assets, dates, forms, numbers and model objects, to name a few. These helpers are available to *all templates* by default." - Rails doc
+
+Well, using Hanami we have Views Layer the Hanami definition for Views is that:
+
+
+
 
 "A view is an object that encapsulates the presentation logic of a page. A template is a file that defines the semantic and visual elements of a page. In order to show a result to a user, a template must be rendered by a view."
 
