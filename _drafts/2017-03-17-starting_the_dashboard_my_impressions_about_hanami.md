@@ -7,7 +7,7 @@ disqus: true
 description: I intend to show some good points to choose Hanami as Framework
 ---
 
-Hello everyone, Today I'm gonna talk about Hanami from my point of view a awesome Framework. My first language at college was Java, all professors made me learn many things about Software Engineering and Design Patterns, different than a many developers I saw, I enjoyed so much my course.
+Hello everyone, Today I'm gonna talk what I've been learning and so on. My first language at college was Java, all professors made me learn many things about Software Engineering and Design Patterns, different than a many developers I saw, I enjoyed so much my course.
 
 When I decided to learn Ruby, I started with Rails the most common choice, Rails is great, this incredible framework allows to you build things very fast but the some applications that I worked could be better with using a different mindset I decided to make an application using Hanami.
 
