@@ -7,7 +7,7 @@ meta_description: "About programming and things that I'm trying to learn"
 markdown: kramdown
 highlighter: rouge
 logo: false
-paginate: 15
+paginate: 5
 baseurl: /
 domain_name: 'http://gabrielmalakias.com.br'
 google_analytics: 'UA-87321020-1'
