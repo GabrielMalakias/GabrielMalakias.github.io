@@ -169,6 +169,20 @@ Using Hanami maybe you can feel alone or maybe cannot find your answer on intern
 
 I think Rails is great and Hanami too. Hanami will release the 1.0.0 pretty soon and a new core team was created then I really believe in this project.
 
-Thanks @Hanami and @Rails core teams!
+Thanks @Hanami and @Rails teams and contribuitors!
 
+### References
+
+https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
+https://martinfowler.com/eaaCatalog/repository.html
+http://hanamirb.org/guides/views/overview/
+http://hanamirb.org/guides/models/overview/
+http://hanamirb.org/guides/actions/overview/
+https://12factor.net/config
+http://api.rubyonrails.org/classes/ActionController/Helpers.html
+http://hanamirb.org/guides/architecture/overview/
+https://martinfowler.com/bliki/MonolithFirst.html
+https://github.com/hanami/hanami/issues/695.
+https://gitter.im/hanami/chat
+https://mkdev.me/en/posts/a-couple-of-words-about-interactors-in-rails
 
