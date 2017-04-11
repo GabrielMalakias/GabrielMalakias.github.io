@@ -7,54 +7,54 @@ disqus: true
 description: I intend to show some good points to choose Hanami as Framework
 ---
 
-Hello everyone, Today I'm gonna talk what I've been learning and so on. My first language at college was Java, all professors made me learn many things about Software Engineering and Design Patterns and also different than a many developers that I met, I enjoyed so much my course.
+Hello, Today I'm gonna talk what I've been learning and so on. My first language at college was Java, all professors made me learn many things about Software Engineering and Design Patterns, even through different than a many developers that I met, I enjoyed so much my course.
 
-When I decided to learn Ruby, I started with Rails the most common choice, Rails is great, this incredible framework allows to you build things very fast, even through some applications that I worked on could be better with using a different mindset, don't get me wrong I really like Rails but we can try another framework, language or paradigm. I decided to experiment Hanami because is different and enforces me to learn new tools and approaches.
+When I decided to learn Ruby, I started with Rails the most common choice. Rails is great, this incredible framework allows you build things very fast using Convention over Configuration, besides that a very powerful toolset. On the other hand some applications that I worked on could be better with using a different mindset, don't get me wrong I really like Rails but we can try another framework, language, paradigm. I decided to experiment Hanami because is different and enforces me to learn new tools and approaches, I will try to share my throughts about it along this post.
 
 
 ### About the project
 
 I intend to build a kind of dashboard where I can manage and send commands my arduino sensors and actuators. To reach my objective I'm going to create three applications (Usgard, Mygard and Bitfrost).
 
-The first one will be the dashboard, I renamed the project to Usgard (the first saga post mentions SpaceWing as project name) because it's a name that makes me remember Asgard where Nordic Gods live, from there Gods can send commands and collect information from another world like Midgard. The second one, called Mygard, can receive commands and send status to somewhere. The third one will be the Bitfrost, this application will be responsible to connect Mygard and Usgard.
+The first one will be the dashboard, I renamed the project to Usgard ,the first part of this saga post mentions [SpaceWing][saga-part-one] as project name. I chose this name because it make me remember Asgard, where Nordic Gods live, from there Gods can send commands and collect information from another world like Midgard. The second one, called Mygard, can receive commands and send status to somewhere. The third one will be the Bitfrost, the application responsible to connect Mygard and Usgard.
 
 There is a diagram to explain my basic idea (I intend to change the architeture):
 
 ![usgard_perspective]({{ site.url }}/assets/images/usgard_perspective.png)
 
-Well, as you've seen above I intend combine different technologies to connect all applications, I want to combine this Stack because I've already saw how can I combine them but I intend to change all pieces to learn and discover new ways to build applications.
+Well, as you've seen above I intend combine different technologies to create the dashboard, I want to combine this Stack Java sounds familiar to me and a currently I know how I can combine them. My main objective is build a sandbox where I can test and create new things.
 
-Usgard uses Hanami as WebFramework and PahoJS as WebSocket connector. The JS structure I didn't find a good framework for my purposes yet, however I would use React, Redux or something that I don't know. :)
+Usgard uses Hanami as WebFramework and PahoJS as WebSocket connector. I didn't find something cool to my JS yet, however I would use React, Redux or something that I don't know. :) Suggestions?
 
 I created two entities to manage my data, I called the first one Sensor and the another one Actuator, In the show page we can see the Sensor/Actuator information and send some message in actuator's page. I didn't finish my first version yet, but I believe that I learnt some new things using Hanami and I will try to share it with you.
 
 ### The bright side
 
 ##### DISCLAIMER
-***First of all, this post represents only my opinion about the topics discussed, I do not intent to hurt anyone or something else. Think by yourself and get your own conclusions. I really like to learn new technologies and I feel it can push me forward.***
+***First of all, this post represents only my opinion about the topics discussed, I do not intent to hurt anyone or something else. Think by yourself and get your own conclusions. I really like to learn new ways to build and I feel it can push me forward.***
 
 ###### 1. Decreases the coupling between domain and persistence layer
 
 Well, I usually saw examples like the following diagram at college:
 
-![dao-java]({{ site.url }}/assets/images/java_dao_example.gif)
-http://www.corej2eepatterns.com/DataAccessObject.htm
+![dao-java]({{ site.url }}/assets/images/repository.gif)
+* *Extracted from: https://martinfowler.com/eaaCatalog/repository.html*
 
-Now I can remember how is boring to write all DAO(Data Acess Object) implementations but I was just starting, by the time I didn't know any technology capable to it by itself. After that I learnt just a little of SpringJPA and also when I was learning it I saw something like the following code:
+Now I can remember how was boring to write all Repository implementations  using JDBC and manipulating my ResultSets to populate my POJO classes, but I was just starting. By the time I didn't know any technology capable to it by itself. After that I learnt just a little of SpringJPA then when I was learning it, I saw something like the following code:
 
 ```java
 public interface UserRepository extends CrudRepository<User, Long> {
   Long countByLastname(String lastname);
 }
 ```
-This example made me think, why do they use Repository to search instead use an ORM like us (Ruby on Rails programmers)?. I think we use ActiveRecord because is natural for us and it can solve our problems however can create different ones.
+This example made me think, why do they use Repository to search instead use an ORM like us (Ruby on Rails programmers)? I think we use ActiveRecord because is natural for us and usually solve our problems very well, however we can try something different.
 
 Using Hanami models we have:
 
 ***"Entity - A model domain object defined by its identity.
-Repository - An object that mediates between the entities and the persistence layer."*** - Hanami Github
+Repository - An object that mediates between the entities and the persistence layer."*** - [Hanami Doc][hanami-models-doc]
 
-We also can create models and repositories using the following command:
+We can create models and repositories using the following command or create it manually. Running the generate command Hanami creates the entity to store our domain logic, the repository to manipulate data and the migration file where we can describe the table columns and types to represent our Entity.
 
 ```shell
 ~/projects/ruby/usgard(dev ✔) bundle exec hanami generate model blargh
@@ -66,21 +66,17 @@ We also can create models and repositories using the following command:
       create  spec/usgard/repositories/blargh_repository_spec.rb
 ```
 
-From my point of view, the concept DAO is really good because we can remove the responsability to manage our database from models. This mindset can keep our models simpler and guide us to Single Responsability principle.
+From my point of view, the Repository pattern is really good because we can remove the responsability to manage data between database and our entities from models. This mindset can keep our models simpler and guide us to [Single Responsability principle][toptal-single-responsibility-principle].
 
 ##### 2. Views
 
 ***"The Rails framework provides a large number of helpers for working with assets, dates, forms, numbers and model objects, to name a few. These helpers are available to ALL TEMPLATES by default.***
 
-***In addition to using the standard template helpers provided, creating custom helpers to extract complicated logic or reusable functionality is strongly encouraged."*** - Rails doc
+***[...]In addition to using the standard template helpers provided, creating custom helpers to extract complicated logic or reusable functionality is strongly encouraged."*** - [Rails doc][rails-helpers-doc]
 
-"A Hanami view is an object that defines presentational logic. Helpers are modules designed to enrich views with a collection of useful features." - Hanami doc
+I usually saw Rails applications using Helpers to create anything inside templates like forms or custom structures. Another point is sometimes using insane ruby interpolations turns a template an very difficult layer to maintain. I know Rails Helpers is different to the concept of Hanami Views but I think maybe a view layer is a good addiction. Well, the Hanami definition for Views is that:
 
-I usually saw Rails applications using Helpers to create anything you want to do into template like forms or custom structures, however these custom methods are shared for all application then I recomment caution. I know Rails Helpers is different to the concept of Hanami Views even through concept of View layer. Well, the Hanami definition for Views is that:
-
-"A view is an object that encapsulates the presentation logic of a page. A template is a file that defines the semantic and visual elements of a page. In order to show a result to a user, a template must be rendered by a view."
-
-Using views you can build all pages using the Hanami DSL or mix some content built using Html with the code generated by DSL.
+***"A view is an object that encapsulates the presentation logic of a page. A template is a file that defines the semantic and visual elements of a page. In order to show a result to a user, a template must be rendered by a view."*** - [Hanami doc][hanami-views-doc-description]
 
 ##### 3.Env files
 
@@ -182,7 +178,16 @@ https://12factor.net/config
 http://api.rubyonrails.org/classes/ActionController/Helpers.html
 http://hanamirb.org/guides/architecture/overview/
 https://martinfowler.com/bliki/MonolithFirst.html
-https://github.com/hanami/hanami/issues/695.
+https://github.com/hanami/hanami/issues/695
 https://gitter.im/hanami/chat
 https://mkdev.me/en/posts/a-couple-of-words-about-interactors-in-rails
+http://www.corej2eepatterns.com/DataAccessObject.htm
+https://www.toptal.com/software/single-responsibility-principle
+https://github.com/hanami/view
+
+[rails-helpers-doc]: http://api.rubyonrails.org/classes/ActionController/Helpers.html
+[toptal-single-responsability-concept]: https://www.toptal.com/software/single-responsibility-principle
+[hanami-views-doc-description]: https://github.com/hanami/view
+[hanami-models-doc]: http://hanamirb.org/guides/models/overview/
+[saga-part-one]: http://gabrielmalakias.com.br/hanami/iot/docker/2017/02/14/iot-saga-my-setup-for-a-hanami-application.html
 
