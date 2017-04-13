@@ -51,7 +51,7 @@ This example made me think, why do they use Repository to search instead use an 
 
 Using Hanami models we have:
 
-***"Entity - A model domain object defined by its identity.
+***"Entity - A model domain object defined by it's identity.
 Repository - An object that mediates between the entities and the persistence layer."*** - [Hanami Doc][hanami-models-doc]
 
 We can create models and repositories using the following command or create it manually. Running the generate command Hanami creates the entity to store our domain logic, the repository to manipulate data and the migration file where we can describe the table columns and types to represent our Entity.
@@ -80,21 +80,28 @@ I usually saw Rails applications using Helpers to create anything inside templat
 
 ##### 3.Env files
 
-"Another approach to config is the use of config files which are not checked into revision control, such as config/database.yml in Rails. This is a huge improvement over using constants which are checked into the code repo, but still has weaknesses: it’s easy to mistakenly check in a config file to the repo; there is a tendency for config files to be scattered about in different places and different formats, making it hard to see and manage all the config in one place. Further, these formats tend to be language- or framework-specific.
+In spite of fact that config files as database.yml in Rails is a big improvement instead constants along all application, it's easy to send these files mistakenly to code repo and also every language adopt a different format each other, according to [Twelve-Factor][twelve-factor-config]. The twelve factor methodology suggest to us to use Environment variables instead config/*.yml because the chance to send to code repo is little and it's a "language- and OS-agnostic standard"
 
-The twelve-factor app stores config in environment variables (often shortened to env vars or env). Env vars are easy to change between deploys without changing any code; unlike config files, there is little chance of them being checked into the code repo accidentally; and unlike custom config files, or other config mechanisms such as Java System Properties, they are a language- and OS-agnostic standard." - 12 factor
-
-In last post I show my application setup using Docker, from my point of view, Hanami enforces you to use EnvVars instead config files, it's good by many reasons as you've seen above, but it turned my setup easier and if you think about Environment automatization and Virtualization this concept would be good.
+In last post I showed how I made my application setup using Docker, so the fact Hanami uses env-vars instead config files turned it easier, and also if you think about Environment automatization and Virtualization this concept would be good.
 
 ##### 4. Controllers
 
-I strongly believe is it the best point of Hanami. Hanami uses Actions instead Controllers with many actions. The Action Layer allows us to use validations, exceptions management, exposures(to grant isolation) and callbacks.
+I strongly believe is it the best point of Hanami. Hanami uses Actions instead Controllers. The Action Layer allows us to:
 
+* ***Create whitelisting:*** to permit only trusted data;
+* ***Create custom validations:*** Hanami uses Hanami::Validation and this project uses the powerful Dry-Validation as dependency then we can build our validations easily;
+* ***Create custom exception management:*** We can easily change the status or execute an methods using it;
+* ***Expose our variables using exposures:*** to grant encapsulation;
+* ***Use callbacks:*** I tend to avoid it, but some times we need to execute a method before Action#call;
+
+And many other things, you can check it at [project page][hanami-controllers].
+
+I created an action in my project and I used the following structure basically to all actions, at least now.
 
 ``` ruby
 module Web::Controllers::Sensors
   class Create
-    include Web::Action # Action mixin
+    include Web::Action # Action mixin (Composition over Inheritance)
 
     # Dry-AutoInject \o/, I used but it isn't default
     include ::AutoInject['commands.sensor.create']
@@ -116,7 +123,7 @@ module Web::Controllers::Sensors
     def call(params)
       if params.valid?
 
-        # Similar to Interactions, strongly recommended by Hanami Team
+        # Similar to Interactions, they use something similar at Dnsimple, you can check at: https://blog.dnsimple.com/2017/03/why-we-ended-up-not-using-rails-for-our-new-json-api/
         sensor = create.(params.get(:sensor))
 
         redirect_to routes.sensor_url(id: sensor.id)
@@ -128,7 +135,7 @@ module Web::Controllers::Sensors
 end
 ```
 
-This bunch of powerful tools allows us to create customized abstractions before delegates to another layer, in my case Commands(Interaction) Layer.
+The use of Commands or Interations mixed with the possibility to customize my actions before send it to Repository made me very happy. I made my model is responsible only to store state like the [PORO][poro-concept] concept.
 
 ##### 5. Umbrella applications
 
@@ -136,7 +143,7 @@ Sometimes you need to create application sharing the same common code (at least 
 
 ***We know that the set of features that we're going to introduce doesn't belong to our main UI (Web). On the other hand, it's too early for us to implement a microservices architecture, only for the purpose of helping our users reset their password.*** - Hanami Guide
 
-The Premature Optimization problem applies here. Usually some startup or a company project wants to be released as fast as we can, on the other hand you really prefer to build isolated application, even through you do not have time enough to create microservices, if it applies to you Hanami would be a really good start.
+The Premature Optimization problem can be applied here. Usually some startup or a company project wants to be released as fast as we can, on the other hand you really prefer to build isolated application, but you don't have time enough to create microservices, if it applies to you Hanami would be a really good start.
 
 
 ### The not so bright side
@@ -169,22 +176,29 @@ Thanks @Hanami and @Rails teams and contribuitors!
 
 ### References
 
-https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
-https://martinfowler.com/eaaCatalog/repository.html
-http://hanamirb.org/guides/views/overview/
-http://hanamirb.org/guides/models/overview/
-http://hanamirb.org/guides/actions/overview/
-https://12factor.net/config
-http://api.rubyonrails.org/classes/ActionController/Helpers.html
-http://hanamirb.org/guides/architecture/overview/
-https://martinfowler.com/bliki/MonolithFirst.html
-https://github.com/hanami/hanami/issues/695
-https://gitter.im/hanami/chat
-https://mkdev.me/en/posts/a-couple-of-words-about-interactors-in-rails
-http://www.corej2eepatterns.com/DataAccessObject.htm
-https://www.toptal.com/software/single-responsibility-principle
-https://github.com/hanami/view
+* https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
+* https://martinfowler.com/eaaCatalog/repository.html
+* http://hanamirb.org/guides/views/overview/
+* http://hanamirb.org/guides/models/overview/
+* http://hanamirb.org/guides/actions/overview/
+* https://12factor.net/config
+* http://api.rubyonrails.org/classes/ActionController/Helpers.html
+* http://hanamirb.org/guides/architecture/overview/
+* https://martinfowler.com/bliki/MonolithFirst.html
+* https://github.com/hanami/hanami/issues/695
+* https://gitter.im/hanami/chat
+* https://mkdev.me/en/posts/a-couple-of-words-about-interactors-in-rails
+* http://www.corej2eepatterns.com/DataAccessObject.htm
+* https://www.toptal.com/software/single-responsibility-principle
+* https://github.com/hanami/view
+* https://github.com/hanami/controller
+* https://blog.dnsimple.com/2017/03/why-we-ended-up-not-using-rails-for-our-new-json-api/
+* http://blog.steveklabnik.com/posts/2011-09-06-the-secret-to-rails-oo-design
 
+[poro-concept]: http://blog.steveklabnik.com/posts/2011-09-06-the-secret-to-rails-oo-design
+[dnsimple-example]: https://blog.dnsimple.com/2017/03/why-we-ended-up-not-using-rails-for-our-new-json-api/
+[hanami-controllers]: https://github.com/hanami/controller
+[twelve-factor-config]: https://12factor.net/config
 [rails-helpers-doc]: http://api.rubyonrails.org/classes/ActionController/Helpers.html
 [toptal-single-responsability-concept]: https://www.toptal.com/software/single-responsibility-principle
 [hanami-views-doc-description]: https://github.com/hanami/view
