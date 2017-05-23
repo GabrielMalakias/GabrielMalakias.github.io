@@ -3,7 +3,6 @@ description: "About programming and things that I'm trying to learn"
 bio: "I'm a tech explorer, currently using Ruby and trying to learn many things."
 meta_description: "About programming and things that I'm trying to learn"
 
-
 markdown: kramdown
 highlighter: rouge
 logo: false
@@ -13,5 +12,5 @@ domain_name: 'http://gabrielmalakias.com.br'
 google_analytics: 'UA-87321020-1'
 gems: [jekyll-paginate, jekyll-seo-tag, jekyll-sitemap]
 
-url:            'http://gabrielmalakias.com.br'
-author:         'Gabriel Malaquias'
+url: 'http://gabrielmalakias.com.br'
+author: 'Gabriel Malaquias'
