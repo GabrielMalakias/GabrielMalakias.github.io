@@ -100,7 +100,7 @@ Now, the basic infrastructure is prepared to handle all websocket connections. F
 
 LiteCable is a ActionCable implementation, I think Rails defines whole concepts behind it very well. The paragraph below has been extracted from Rails doc.
 
-***For every WebSocket accepted by the server, a connection object is instantiated. [...] The connection itself does not deal with any specific application logic beyond authentication and authorization.*** - [Rails ActionCable Overview][rails-actioncable-overview]
+*For every WebSocket accepted by the server, a connection object is instantiated. [...] The connection itself does not deal with any specific application logic beyond authentication and authorization.* - [Rails ActionCable Overview][rails-actioncable-overview]
 
 We must create a class to deal with this layer.
 
@@ -109,7 +109,8 @@ class Connection < LiteCable::Connection::Base # :nodoc:
   identified_by :user, :sid
 
   def connect
-    @user = 'usgard' #cookies["user"]
+    # I don't have authentication in this application, yet
+    @user = 'usgard' # cookies["user"]
     @sid = request.params["sid"]
     reject_unauthorized_connection unless @user
     Hanami::Logger.new.info "#{@user} connected"
@@ -145,7 +146,17 @@ class Channel < LiteCable::Channel::Base # :nodoc:
 end
 ```
 
+We already have all backend structure, even though we must use these channels and connections at frontend.
+
 ### The JS
+
+Using Rails ActionCable we must require the cable.js, this js is responsible for communication and keep the websocket connection alive. Well, In Anycable [page][anycable-github] they mention:
+
+*"AnyCable uses ActionCable protocol, so you can use ActionCable JavaScript client without any monkey-patching."* - [Anycable page][anycable-github]
+
+We can create our js abstraction, but not now. I used the actioncable.js to do that I downloaded the JS and added to my application.html.slim
+
+After that, the JS to show the incomming messages and send it to WebSocket must be created. I used the following code do deal with my websocket. In this case I have to send commands to actuators channel and receive commands to like a terminal console.
 
 ### References
 
@@ -156,4 +167,6 @@ end
 [palkan]: https://twitter.com/palkan_tula
 [docker-compose]: https://github.com/GabrielMalakias/usgard/blob/anycable_integration/docker-compose.yml
 [rails-actioncable-overview]: http://guides.rubyonrails.org/action_cable_overview.html
+[action-cable-js]: https://www.npmjs.com/package/actioncable
+[anycable-github]: https://github.com/anycable/anycable
 
