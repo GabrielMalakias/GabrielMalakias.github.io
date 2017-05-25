@@ -147,20 +147,22 @@ class Channel < LiteCable::Channel::Base # :nodoc:
 end
 ```
 
-We already have all backend structure, even though we must use these channels and connections at frontend.
+We already have all backend structure, even though we must use some connections at frontend.
 
-### The JS
+### Consuming websockets
 
-Using Rails ActionCable we must require the cable.js, this js is responsible for communication and keep the websocket connection alive. Well, In Anycable [page][anycable-github] they mention:
+I used the Rails ActionCable, then we must require the [cable.js][actioncable-npm], this js handles the communication and keep the websocket connection alive. Well, In Anycable [page][anycable-github] they mention:
 
-*"AnyCable uses ActionCable protocol, so you can use ActionCable JavaScript client without any monkey-patching."* - [Anycable page][anycable-github]
+*"AnyCable uses ActionCable protocol, so you can use ActionCable JavaScript client without any monkey-patching."* - [Anycable][anycable-github]
 
-We can create our js abstraction, but not now. I used the actioncable.js to do that I downloaded the JS and added to my application.html.slim
+We can create our js abstraction, but not now. I would rather use the cable.js, then I downloaded the JS and added to my application.html.slim
 
-After that, the JS to show the incomming messages and send it to WebSocket must be created. I used the following code do deal with my websocket. In this case I have to send commands to actuators channel and receive commands to like a terminal console.
+``` ruby
+  == javascript 'cable'
+  == javascript 'channel'
+```
 
-
-I condensed all js to turn easier to understand...
+But, wait a moment, What's that channel.js? This JS is responsible to create the channel, I'm using the Revealing Module pattern on my JS, from my point of view it's a good JS pattern and I guess it can be changed easily later.
 
 ``` javascript
 
@@ -192,10 +194,14 @@ App.channel = (function() {
 
 ```
 
+After that we must create the JS deal with the incomming messages and send them to the WebSocket. I used the following code. In this case I have to send messages to actuators channel and receive these messages like a terminal console.
 
-````javascript
+*PS:. I omitted some javascript of examples to turn easier to understand, however this code is available [here][usgard-js]*
+
+```javascript
 App.sensor = (function() {
-  var config = { container: "display_box", channel: "actuator", user: "usgard", socket: null };
+  var config = { container: "display_box", channel: "actuator",
+  user: "usgard", socket: null };
 
   function init(configuration) {
     config =  Object.assign({}, config, configuration);
@@ -205,6 +211,7 @@ App.sensor = (function() {
     true
   }
 
+  // This function will handle the message when enter is typed
   function addListeners() {
     return getConsoleInput().addEventListener("keydown", function (event) {
       if (event.which == 13 || event.keyCode == 13) {
@@ -234,45 +241,340 @@ App.sensor = (function() {
     appendMessageToBox(data);
   }
 
+  // Similar to onReceive function
   function onConnected() {
-    appendMessageToBox({ user: 'system', message: "Connection Established", system: true });
+    // { ... }
   }
 
+  // Sends to ActuatorChannel
   function onEnter() {
     config.socket.perform('speak', { message: getMessageFromConsoleInput() });
   }
 
   // Create HTML elements
-  //
   function getMessageFromConsoleInput() {
-    var value = getConsoleInput().value;
-    getConsoleInput().value = null;
-    return value;
+    // { ... }
   }
 
-  function createMessageNode(incomingMessage) {
-    var node = document.createElement('div');
-    node.innerHTML = '<div class="txt">' + incomingMessage + '</div>';
-    return node;
-  }
-
-  function getMessageBoxElement() {
-    return document.getElementById(config.container);
-  }
-
-  function appendMessageToBox(incomingMessage) {
-    getMessageBoxElement().appendChild(createMessageNode(incomingMessage.message));
-  }
-
-  function getConsoleInput() {
-    return document.getElementById("console")
-  }
+  // Some other functions { ... }
 
   return {
     init: init
   }
 }());
 ```
+
+In the end we must have the HTML, then here it is:
+
+``` slim
+div
+  h1 #{actuator.name}
+
+  p id='actuatorid' style='display: none' #{actuator.id}
+
+  dl.dl-horizontal
+    dt id='mqtt_topic' #{actuator.mqtt_topic}
+    dd #{actuator.description}
+
+  div.col-md-7
+    label Message
+  div.col-md-5
+    div.display_box id='display_box'
+    div.col-xs-offset-0.form-group
+      input.form-control id='console' type="text" name="msg"
+
+  div.row
+    button.btn.btn-secondary id="status" Status
+    button.btn.btn-danger id="delete" Destroy
+
+  == javascript 'actuator'
+
+  javascript:
+    App.sensor.init({identifier: "#{{ actuator.id }}"});
+```
+
+And it works!
+
+![anycable demo]({{ site.url }}/assets/images/anycable_demo.png)
+
+That sounds good, then why not?!
+
+### How it works
+
+Vladimir Dementyev([@palkan_tula][palkan]) recently wrote a post about it, From his point of view Ruby and Rails aren't the best option for websockets based his experience and benchmarks, a decision has been made, they(Anycable.io) decided to extract the WebSocket responsability to another language, in this case, the language selected was Go.
+Anycable-Go deals with the websocket management and many other things without know of any business logic.
+To deal with this layer, we must create our classes to manage our rules, however how does AnyCable WebSocket(GO) connect to a Ruby Application?
+
+They solved this problem using a gRPC client connected to another ruby process like the following picture.
+
+![anycable demo]({{ site.url }}/assets/images/anycable_architecture.png)
+
+* *Extracted from: https://evilmartians.com/chronicles/anycable-actioncable-on-steroids*
+
+Well, They explain all pieces in this [post][anycable-on-steroids], it's very interesting, please check it out.
+
+I chose Hanami as Framework, I was looking for anyone that already made the connection between Hanami and Anycable but I didn't find anything. That's is reason why I decided to do it by myself and I will share my experience along this post. Fortunately Anycable already has a example using Sinatra, I basically followed these steps changing some pieces, let's start!
+
+### Adding pieces to setup
+
+Firstly, we need a script to start our RPC server. I used the following code to start the Anycable RPC server and load Hanami dependencies.
+
+``` ruby
+require "rack"
+require "anycable"
+require "litecable"
+require_relative './config/boot'
+
+LiteCable.anycable!
+
+Anycable.configure do |config|
+  config.connection_factory = Usgard::Ws::Connection
+end
+
+Anycable::Server.start
+
+```
+This server is a rack application then we need to require rack and also the 'config/boot.rb', which will load all Hanami components using 'Hanami.boot'. After that the line 'LiteCable.anycable!' will enable the anycable compatibility mode. After that we must configure what's the class resposible to handle the connections, in this case 'Ws::Connection'. In the end the server must be started, then 'Anycable::Server.start' do it.
+
+In sinatra example they've shown how start anycable-go and the RPC server using hivemind to start all processes. I use docker-compose, then I added the following lines to my compose file.
+
+``` yml
+services:
+  #More stuff here
+  rpc:
+    build: .
+    command: bundle exec ruby anycable
+    volumes:
+      - .:/usgard
+    env_file:
+      - .env.development
+    environment:
+      - ANYCABLE_REDIS_URL=redis://redis:6379/0
+      - ANYCABLE_RPC_HOST=0.0.0.0:50051
+    depends_on:
+      - redis
+      - db
+  anycable:
+    image: 'anycable/anycable-go:0.3'
+    ports:
+      - "8080:8080"
+    environment:
+      - ADDR=0.0.0.0:8080
+      - REDIS=redis://redis:6379/0
+      - RPC=rpc:50051
+    depends_on:
+      - redis
+      - rpc
+```
+* *Ps:. You can check this file [here][docker-compose]*
+
+RPC server starts running 'bundle exec anycable' and the Anycable-Go image will start automatically, We must only configure some environment variables, though. Anycable uses Redis to manage the connections and broadcasts.
+
+*Ps:. The variable 'DATABASE_URL' must contains the connection string when 'Hanami.boot' is executed!*
+
+Now, the basic infrastructure is prepared to handle all websocket connections. Finally we can start to add the business logic.
+
+### Creating Channels and Connections
+
+LiteCable is a ActionCable implementation, I think Rails defines whole concepts behind it very well. The paragraph below has been extracted from Rails doc.
+
+*For every WebSocket accepted by the server, a connection object is instantiated. [...] The connection itself does not deal with any specific application logic beyond authentication and authorization.* - [Rails ActionCable Overview][rails-actioncable-overview]
+
+We must create a class to deal with this layer.
+
+``` ruby
+class Connection < LiteCable::Connection::Base # :nodoc:
+  identified_by :user, :sid
+
+  def connect
+    # I don't have authentication in this application, yet
+    @user = 'usgard' # cookies["user"]
+    @sid = request.params["sid"]
+    reject_unauthorized_connection unless @user
+    Hanami::Logger.new.info "#{@user} connected"
+  end
+
+  def disconnect
+    Hanami::Logger.new.info "#{@user} disconnected"
+  end
+end
+```
+
+Rails defines channels as ***a logical unit of work, similar to what a controller does in a regular MVC setup.***
+
+
+``` ruby
+class Channel < LiteCable::Channel::Base # :nodoc:
+  identifier :sensor
+
+  def subscribed
+    reject unless sensor_id
+    stream_from "chat_#{chat_id}"
+  end
+
+  def speak(data)
+    LiteCable.broadcast "chat_#{chat_id}", user: user, message: data["message"], sid: sid
+  end
+
+  private
+
+  def chat_id
+    params.fetch("id")
+  end
+end
+```
+
+We already have all backend structure, even though we must use some connections at frontend.
+
+### Consuming websockets
+
+I used the Rails ActionCable, then we must require the [cable.js][actioncable-npm], this js handles the communication and keep the websocket connection alive. Well, In Anycable [page][anycable-github] they mention:
+
+*"AnyCable uses ActionCable protocol, so you can use ActionCable JavaScript client without any monkey-patching."* - [Anycable][anycable-github]
+
+We can create our js abstraction, but not now. I would rather use the cable.js, then I downloaded the JS and added to my application.html.slim
+
+``` ruby
+  == javascript 'cable'
+  == javascript 'channel'
+```
+
+But, wait a moment, What's that channel.js? This JS is responsible to create the channel, I'm using the Revealing Module pattern on my JS, from my point of view it's a good JS pattern and I guess it can be changed easily later.
+
+``` javascript
+
+App.channel = (function() {
+  function init(configuration) {
+    return configureCable(configuration);
+  }
+
+  // configure and create cable using identifier and functions
+  function configureCable(configuration) {
+    return createCable().subscriptions.create(configuration.identifiers, configuration.functions);
+  }
+
+  function createCable() {
+    return ActionCable.createConsumer('ws://localhost:8080/cable' + '?sid=' + socketId());
+  }
+
+  // Unique identifier for a connection
+  function socketId() {
+    return Date.now + generateRandomNumber();
+  }
+
+  function generateRandomNumber() {...}
+
+  return {
+    init: init
+  }
+}());
+
+```
+
+After that we must create the JS deal with the incomming messages and send them to the WebSocket. I used the following code. In this case I have to send messages to actuators channel and receive these messages like a terminal console.
+
+*PS:. I omitted some javascript of examples to turn easier to understand, however this code is available [here][usgard-js]*
+
+```javascript
+App.sensor = (function() {
+  var config = { container: "display_box", channel: "actuator",
+  user: "usgard", socket: null };
+
+  function init(configuration) {
+    config =  Object.assign({}, config, configuration);
+    config.socket = App.channel.init({identifiers: identifier(), functions: subscriptionFunctions()});
+
+    addListeners();
+    true
+  }
+
+  // This function will handle the message when enter is typed
+  function addListeners() {
+    return getConsoleInput().addEventListener("keydown", function (event) {
+      if (event.which == 13 || event.keyCode == 13) {
+        onEnter();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function identifier() {
+    return {
+      channel: config.channel, id: config.identifier
+    };
+  }
+
+  function subscriptionFunctions() {
+    return { connected: onConnected, disconnected:  onDisconnected, received: onReceive }
+  }
+
+  // These functions will be evaluated when cable trigger the subscriptions
+  function onDisconnected() {
+    appendMessageToBox({ user: 'system', message: "Connection Lost", system: true });
+  }
+
+  function onReceive(data) {
+    appendMessageToBox(data);
+  }
+
+  // Similar to onReceive function
+  function onConnected() {
+    // { ... }
+  }
+
+  // Sends to ActuatorChannel
+  function onEnter() {
+    config.socket.perform('speak', { message: getMessageFromConsoleInput() });
+  }
+
+  // Create HTML elements
+  function getMessageFromConsoleInput() {
+    // { ... }
+  }
+
+  // Some other functions { ... }
+
+  return {
+    init: init
+  }
+}());
+```
+
+In the end we must have the HTML, then here it is:
+
+``` slim
+div
+  h1 #{actuator.name}
+
+  p id='actuatorid' style='display: none' #{actuator.id}
+
+  dl.dl-horizontal
+    dt id='mqtt_topic' #{actuator.mqtt_topic}
+    dd #{actuator.description}
+
+  div.col-md-7
+    label Message
+  div.col-md-5
+    div.display_box id='display_box'
+    div.col-xs-offset-0.form-group
+      input.form-control id='console' type="text" name="msg"
+
+  div.row
+    button.btn.btn-secondary id="status" Status
+    button.btn.btn-danger id="delete" Destroy
+
+  == javascript 'actuator'
+
+  javascript:
+    App.sensor.init({identifier: "#{{ actuator.id }}"});
+```
+
+And it works!
+
+![anycable demo]({{ site.url }}/assets/images/hanami-anycable-works.gif)
+
+Well, Do you like this post? Please feel leave your comments and share it with your friends, Thanks!
 
 ### References
 
@@ -283,6 +585,20 @@ App.sensor = (function() {
 [palkan]: https://twitter.com/palkan_tula
 [docker-compose]: https://github.com/GabrielMalakias/usgard/blob/anycable_integration/docker-compose.yml
 [rails-actioncable-overview]: http://guides.rubyonrails.org/action_cable_overview.html
-[action-cable-js]: https://www.npmjs.com/package/actioncable
+[actioncable-npm]: https://www.npmjs.com/package/actioncable
 [anycable-github]: https://github.com/anycable/anycable
+[usgard-js]: https://github.com/GabrielMalakias/usgard/tree/master/apps/web/assets/javascripts
+
+### References
+
+* http://anycable.io
+* https://evilmartians.com/chronicles/anycable-actioncable-on-steroids
+
+[anycable-on-steroids]: https://evilmartians.com/chronicles/anycable-actioncable-on-steroids
+[palkan]: https://twitter.com/palkan_tula
+[docker-compose]: https://github.com/GabrielMalakias/usgard/blob/anycable_integration/docker-compose.yml
+[rails-actioncable-overview]: http://guides.rubyonrails.org/action_cable_overview.html
+[actioncable-npm]: https://www.npmjs.com/package/actioncable
+[anycable-github]: https://github.com/anycable/anycable
+[usgard-js]: https://github.com/GabrielMalakias/usgard/tree/master/apps/web/assets/javascripts
 
