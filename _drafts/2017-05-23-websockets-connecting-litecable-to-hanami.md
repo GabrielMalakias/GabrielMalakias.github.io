@@ -45,12 +45,13 @@ Firstly, we need a script to start our RPC server. I used the following code to 
 ``` ruby
 require "rack"
 require "anycable"
+require "litecable"
 require_relative './config/boot'
 
 LiteCable.anycable!
 
 Anycable.configure do |config|
-  config.connection_factory = Ws::Connection
+  config.connection_factory = Usgard::Ws::Connection
 end
 
 Anycable::Server.start
@@ -157,6 +158,121 @@ Using Rails ActionCable we must require the cable.js, this js is responsible for
 We can create our js abstraction, but not now. I used the actioncable.js to do that I downloaded the JS and added to my application.html.slim
 
 After that, the JS to show the incomming messages and send it to WebSocket must be created. I used the following code do deal with my websocket. In this case I have to send commands to actuators channel and receive commands to like a terminal console.
+
+
+I condensed all js to turn easier to understand...
+
+``` javascript
+
+App.channel = (function() {
+  function init(configuration) {
+    return configureCable(configuration);
+  }
+
+  // configure and create cable using identifier and functions
+  function configureCable(configuration) {
+    return createCable().subscriptions.create(configuration.identifiers, configuration.functions);
+  }
+
+  function createCable() {
+    return ActionCable.createConsumer('ws://localhost:8080/cable' + '?sid=' + socketId());
+  }
+
+  // Unique identifier for a connection
+  function socketId() {
+    return Date.now + generateRandomNumber();
+  }
+
+  function generateRandomNumber() {...}
+
+  return {
+    init: init
+  }
+}());
+
+```
+
+
+````javascript
+App.sensor = (function() {
+  var config = { container: "display_box", channel: "actuator", user: "usgard", socket: null };
+
+  function init(configuration) {
+    config =  Object.assign({}, config, configuration);
+    config.socket = App.channel.init({identifiers: identifier(), functions: subscriptionFunctions()});
+
+    addListeners();
+    true
+  }
+
+  function addListeners() {
+    return getConsoleInput().addEventListener("keydown", function (event) {
+      if (event.which == 13 || event.keyCode == 13) {
+        onEnter();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  function identifier() {
+    return {
+      channel: config.channel, id: config.identifier
+    };
+  }
+
+  function subscriptionFunctions() {
+    return { connected: onConnected, disconnected:  onDisconnected, received: onReceive }
+  }
+
+  // These functions will be evaluated when cable trigger the subscriptions
+  function onDisconnected() {
+    appendMessageToBox({ user: 'system', message: "Connection Lost", system: true });
+  }
+
+  function onReceive(data) {
+    appendMessageToBox(data);
+  }
+
+  function onConnected() {
+    appendMessageToBox({ user: 'system', message: "Connection Established", system: true });
+  }
+
+  function onEnter() {
+    config.socket.perform('speak', { message: getMessageFromConsoleInput() });
+  }
+
+  // Create HTML elements
+  //
+  function getMessageFromConsoleInput() {
+    var value = getConsoleInput().value;
+    getConsoleInput().value = null;
+    return value;
+  }
+
+  function createMessageNode(incomingMessage) {
+    var node = document.createElement('div');
+    node.innerHTML = '<div class="txt">' + incomingMessage + '</div>';
+    return node;
+  }
+
+  function getMessageBoxElement() {
+    return document.getElementById(config.container);
+  }
+
+  function appendMessageToBox(incomingMessage) {
+    getMessageBoxElement().appendChild(createMessageNode(incomingMessage.message));
+  }
+
+  function getConsoleInput() {
+    return document.getElementById("console")
+  }
+
+  return {
+    init: init
+  }
+}());
+```
 
 ### References
 
