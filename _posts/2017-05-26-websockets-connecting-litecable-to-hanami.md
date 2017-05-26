@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "IoT Saga - Part 3 - Websockets! Connecting LiteCable to Hanami"
-date:   2017-05-23 00:00:00
+date:   2017-05-26 00:00:00
 categories: ruby hanami iot
 disqus: true
 description: Trying to show why and how I used websockets with Hanami
