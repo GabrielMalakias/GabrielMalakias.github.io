@@ -7,14 +7,14 @@ disqus: true
 description: Trying to show why and how I used websockets with Hanami
 ---
 
-Hello, Today I wanna talk about how I'm using Websockets in Hanami. Well, when I was starting I added the following line inside my application.rb but after that I was worried about it.
+Hello, Today I'd like to talk about how I'm using Websockets in Hanami. Well, when I was starting I added the following line inside my application.rb but after that I was worried about it.
 
 ``` ruby
 security.content_security_policy %{
   connect-src: ws: 'self';
 }
 ```
-I was using PahoJS to connect to MQTT directly, on the other hand I think isn't a good option because credentials can be exposed. And, above all I must control who is receiving and sending data through MQTT in future.
+I was using PahoJS to connect to MQTT directly, but I think it isn't a good option because credentials can be exposed. And, above all I have to control who is receiving and sending data through MQTT in future.
 
 I started to search on the Internet a good option when suddenly I saw this page:
 
@@ -26,7 +26,8 @@ That sounds good, then why not?!
 
 Vladimir Dementyev([@palkan_tula][palkan]) recently wrote a post about it, From his point of view Ruby and Rails aren't the best option for websockets based his experience and benchmarks, a decision has been made then they (Anycable.io) decided to extract the WebSocket responsability to another language, in this case, the language selected was Go.
 Anycable-Go deals with the websocket management and many other things without know of any business logic.
-To deal with this layer, we must create our classes to manage our rules, however how does AnyCable WebSocket(Go) connect to a Ruby Application?
+
+To deal with this layer, we need to create our classes to manage our rules, however how does AnyCable WebSocket(Go) connect to a Ruby Application?
 
 They solved this problem using a gRPC client connected to another ruby process like the following picture.
 
@@ -55,9 +56,8 @@ Anycable.configure do |config|
 end
 
 Anycable::Server.start
-
 ```
-This server is a rack application then rack is required to run it, and also the 'config/boot.rb', which will load all Hanami components using 'Hanami.boot'. After that the line 'LiteCable.anycable!' will enable the anycable compatibility mode. We must configure what's the class responsible to handle the connections, in this case 'Usgard::Ws::Connection'. In the end the server must be started, then 'Anycable::Server.start' do it.
+This server is a rack application then rack is required to run it, and also the 'config/boot.rb', which will load all Hanami components using 'Hanami.boot'. After that the line 'LiteCable.anycable!' will enable the anycable compatibility mode. We must configure the class responsible to handle the connections, in this case 'Usgard::Ws::Connection'. In the end, the server is started, then 'Anycable::Server.start' do it.
 
 In [sinatra example][sinatra-example] they've shown how start anycable-go and the RPC server using hivemind to start all processes. I use docker-compose, then I added the following lines to my compose file.
 
@@ -103,7 +103,7 @@ LiteCable is a ActionCable implementation, I think Rails defines whole concepts 
 
 *For every WebSocket accepted by the server, a connection object is instantiated. [...] The connection itself does not deal with any specific application logic beyond authentication and authorization.* - [Rails ActionCable Overview][rails-actioncable-overview]
 
-So, we must create a connection class to deal with this layer.
+So, we need to create a connection class to deal with this layer.
 
 ``` ruby
 module Usgard
@@ -128,7 +128,6 @@ end
 ```
 
 Rails defines channels as ***"a logical unit of work, similar to what a controller does in a regular MVC setup."*** So, a Channel class is required, I used the following class for my actuators.
-
 
 ```ruby
 module Usgard
@@ -155,8 +154,7 @@ module Usgard
   end
 end
 ```
-
-We already have all backend structure, even though we must build the consumers at frontend.
+We already have all backend structure, besides we have to build the consumers at frontend.
 
 ### Consuming websockets
 Well, In Anycable [page][anycable-github] they mention:
@@ -206,7 +204,7 @@ App.channel = (function() {
 }());
 ```
 
-After that we must create the JS deal with the incomming messages and send them to the WebSocket. I used the following code. I wanna build something like a terminal, which one I have to send messages to actuators channel and receive it.
+After that we have to create the JS deal with the incomming messages and send them to the WebSocket. I used the following code. I wanna build something like a terminal, which one I have to send messages to actuators channel and receive it.
 
 *PS:. I omitted some javascript of examples to turn easier to understand, however this code is available [here][usgard-js]*
 
@@ -217,22 +215,12 @@ App.sensor = (function() {
 
   function init(configuration) {
     config =  Object.assign({}, config, configuration);
+
     config.socket = App.channel
                        .init({identifiers: identifier(),
                               functions: subscriptionFunctions()});
 
     addListeners();
-  }
-
-  // This function will handle the message when enter is typed
-  function addListeners() {
-    return getConsoleInput().addEventListener("keydown", function (event) {
-      if (event.which == 13 || event.keyCode == 13) {
-        onEnter();
-        return false;
-      }
-      return true;
-    });
   }
 
   function identifier() {
@@ -260,6 +248,17 @@ App.sensor = (function() {
     // { ... }
   }
 
+  // This function will handle the message when enter is typed
+  function addListeners() {
+    return getConsoleInput().addEventListener("keydown", function (event) {
+      if (event.which == 13 || event.keyCode == 13) {
+        onEnter();
+        return false;
+      }
+      return true;
+    });
+  }
+
   // Sends to ActuatorChannel
   function onEnter() {
     config.socket.perform('speak',
@@ -279,7 +278,7 @@ App.sensor = (function() {
 }());
 ```
 
-In the end we must have the HTML in this case I used slim, then here it is:
+In the end, we have the HTML - in this case I used slim. So, here it is.
 
 ``` slim
 div
