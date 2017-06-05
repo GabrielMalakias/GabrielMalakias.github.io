@@ -684,8 +684,18 @@ margin on the iframe, cause it breaks stuff. */
     color: rgba(255,255,255,0.8);
 }
 
+.page-menu {
+    margin: 10px;
+    font-size: 2rem;
+    line-height: 1.5em;
+    font-weight: 400;
+    font-family: "Merriweather", serif;
+    letter-spacing: 0.01rem;
+    color: rgba(255,255,255,0.8);
+}
+
 .no-cover.main-header {
-    min-height: 160px;
+    min-height: 120px;
     max-height: 40%;
     background: #002640;
 }
@@ -1061,7 +1071,7 @@ body:not(.post-template) .post-title {
 
 .post-head.main-header {
     height: 65%;
-    min-height: 180px;
+    min-height: 120px;
 }
 
 .no-cover.post-head.main-header {
@@ -1073,12 +1083,12 @@ body:not(.post-template) .post-title {
 
 .tag-head.main-header {
     height: 40%;
-    min-height: 180px;
+    min-height: 120px;
 }
 
 .author-head.main-header {
     height: 40%;
-    min-height: 180px;
+    min-height: 120px;
 }
 
 .no-cover.author-head.main-header {

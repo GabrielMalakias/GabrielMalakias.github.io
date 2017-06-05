@@ -10,7 +10,11 @@ paginate: 5
 baseurl: /
 domain_name: 'http://gabrielmalakias.com.br'
 google_analytics: 'UA-87321020-1'
-gems: [jekyll-paginate, jekyll-seo-tag, jekyll-sitemap]
+gems:
+  - jekyll-paginate
+  - jekyll-seo-tag
+  - jekyll-sitemap
 
 url: 'http://gabrielmalakias.com.br'
 author: 'Gabriel Malaquias'
+
