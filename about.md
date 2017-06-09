@@ -1,8 +1,6 @@
 ---
 layout: page
 title: About me
-menus:
-  - about
 ---
 
 ![Me - Photo by ChupaCabras]({{ site.url }}/assets/images/profile.png)
