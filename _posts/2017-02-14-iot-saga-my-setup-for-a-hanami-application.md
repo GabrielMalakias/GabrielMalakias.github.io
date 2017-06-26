@@ -5,6 +5,7 @@ date:   2017-02-14 12:00:00
 categories: hanami iot docker
 disqus: true
 description: I'm going to show how I made my setup basic development to a new Hanami application...
+cover: /assets/images/welcome_to_hanami.png
 ---
 
 Hello, Today I'm gonna talk about Hanami, I really wish to use it, then I decided to create a project to combine everything that I want to learn. I intend to do a saga covering my journey to complete it. I intend to use some technologies like MQTT and RXTX to do the communication with my Arduino and after that an application to execute some commands on my board. This saga is inspired by [this post][mqtt-sergioaugrod] (made by a friend of mine), but I decided to use different tools, languages or frameworks to get some new knowledge.
