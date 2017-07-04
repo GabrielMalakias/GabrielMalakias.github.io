@@ -5,6 +5,7 @@ date:   2016-12-08 00:00:00
 categories: ruby circuit-breaker
 disqus: true
 description: In this post I will try to talk about circuit-breakers using ruby and stoplight gem
+cover: /assets/images/stoplightdiagram.png
 ---
 
 

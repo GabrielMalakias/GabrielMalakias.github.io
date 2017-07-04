@@ -5,6 +5,7 @@ date:   2017-05-26 00:00:00
 categories: ruby hanami iot
 disqus: true
 description: Trying to show why and how I used websockets with Hanami
+cover: /assets/images/anycable_demo.png
 ---
 
 Hello, Today I'd like to talk about how I'm using Websockets in Hanami. Well, when I was starting I added the following line inside my application.rb but after that I was worried about it.

@@ -5,6 +5,7 @@ date:   2017-04-17 00:00:00
 categories: ruby hanami iot
 disqus: true
 description: I intend to show some good points to choose Hanami as Framework
+cover: /assets/images/usgard_perspective_cover.png
 ---
 
 Hello, Today I will talk about I’ve been learning. My first language at college was Java, from my point of view this language enforces you to learn many things.  By the time, I remember how many hours I spent learning Software Engineering and Design Patterns to build all requested homework. Even through different than a many developers that I met, I enjoyed so much my course.
