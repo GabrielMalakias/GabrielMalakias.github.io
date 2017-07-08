@@ -7,22 +7,22 @@ disqus: true
 description: In this post, I will show what is a dependency injection how can we use this concept
 ---
 
-Around of 2 or 3 months ago, I saw dry-rb at the first time, I thought: "Oh, that's awesome, I need experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and sometimes to do some code improvements.
+Around of 2 or 3 months ago, I saw dry-rb at the first time, I thought: "Oh, that's awesome, I have to experiment". Today is the day! If you are thinking: "Oh, sorry what is Dry-rb?". I will explain... Well, Dry-rb is a bunch of tools to simplify and help us to make some code improvements.
 
-Today in this post, I will try to show how we can use dry-auto_inject with rails. First, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), C#, or some language or framework with dependency-injection support you saw the amazing 'magic' of Dependency Injection(DI).
+Today in this post, I'm going to show how we can use dry-auto_inject with rails. First, There is a simple question, what is dry-auto_inject? According with dry-rb.org, it's a "Container-agnostic constructor injection mixin", if you already programmed in languages like Java (Spring @Autowired, says: 'Hello'), C#, or some language or framework with dependency-injection support you saw the amazing 'magic' of Dependency Injection(DI).
 
-If you are thinking: "Oh, my Gosh but I never saw nothing about dependency injection in my life". Relax, I didn't forget you. The Internet has a lot materials about dependency injection. If you read something about SOLID, you already saw this concept. The D in SOLID, represents "Dependency inversion principle", this principle can be made with an creational pattern, a factory method or a DEPENDENCY INJECTION framework.
-
-You can see below an image to represent DI:
+If you are thinking: "Oh, my Gosh but I never saw nothing about dependency injection in my life". Relax, I didn't forget you. The Internet has a lot of materials about dependency injection. If you read something about SOLID, you already saw this concept. The D in SOLID, represents "Dependency inversion principle", this principle can be made with an creational pattern, a factory method or a DEPENDENCY INJECTION framework, take a look below.
 
 ![dependency-injection]({{ site.url }}/assets/images/dependency_injection.png)
 
-I will not explain all details behind this concept, because many people already do it as you see below:
+* *Extracted from: https://dzone.com/articles/dependency-injection-0*
+
+I won't explain all details behind this concept, because many people made it as you see below:
 
 * [solnic][solnic-dependency-injection];
 * [martin-fowler][martin-fowler-dependency-injection].
 
-But, if you already saw something like the code below, you already had a possibility to use DI:
+If you saw something like the code below, you already had a possibility to use Dry-Auto_Inject:
 
 {% highlight ruby %}
 class CreateArticle
@@ -36,10 +36,11 @@ class CreateArticle
 end
 {% endhighlight %}
 
-In this case the class CreateArticle receives a external dependency and call repository method. The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you need to change the code implementation, you need to do changes only inside ArticleRepository. If you have some tool to inject the dependency automatically, this code can be more uncoupled and the responsability to know who implements, can be delegated to another part of code.
+In this case the class CreateArticle receives a external dependency and calls the repository method(#call). The class CreateArticle believes that ArticleRepository implements a method #call, it doesn't have any details about repository. If you have some tool to inject the dependency automatically, this code can be more uncoupled and the responsability to know where was implemented, can be delegated to another part of code.
 
 #### Starting
-First, we need to install the development environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed, check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
+
+We have to install the development environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don't have Ruby and Rails installed, check how install in [RVM][rvm] or [Rbenv][rbenv] sites, it's very simple ;).
 
 {% highlight bash %}
  ~/projects/ruby  ruby -v
@@ -49,7 +50,7 @@ ruby 2.3.1p112 (2016-04-26 revision 54768) [x86_64-linux]
 Rails 5.0.0.1
 {% endhighlight %}
 
-After that, we can start! To do the experiments, we need a Rails application. To create a new App, type the command below. If you already has a Rails app, you can ignore this step.
+After that, we can start! To put it into action, we need a Rails application. To create a new App, type the command below. If you already has a Rails app, you can ignore this step.
 
 {% highlight bash %}
 ~/projects/ruby  rails new blog
@@ -163,7 +164,7 @@ Now, we can see the created routes typing 'rake routes'.
  DELETE /articles/:id(.:format)      articles#destroy
 {% endhighlight %}
 
-Before run application, we need to create the table to store all article entries.
+Before run application, we need to create the table to store article entries.
 
 {% highlight bash %}
  ~/projects/ruby/blog  rake routes
@@ -174,7 +175,7 @@ Before run application, we need to create the table to store all article entries
   == 20161115123949 CreateArticles: migrated (0.0016s) ==========================
 {% endhighlight %}
 
-We will change only the article#create route, but be free to modify everything you want. You can create an article to test if everything work as expected, to do this, open your browser and access http://localhost:3000/articles.
+We will change only the article#create route, but be free to modify everything you want. You can create an article to test if everything work as expected, So, open your browser and access http://localhost:3000/articles.
 
 After tests, we can change the code. Take a look at articles_controller.rb.
 
@@ -215,7 +216,7 @@ module Blog
     config.eager_load_paths += Dir["#{Rails.root}/lib"] # add this line
 {% endhighlight %}
 
-Now you can run rails console and call Commands::Article::Create#call with params. An article should be created.
+Now you can run rails console and call Commands::Article::Create#call with params. An article is created.
 
 {% highlight ruby %}
  ~/projects/ruby/blog  rails console
@@ -228,7 +229,7 @@ Now you can run rails console and call Commands::Article::Create#call with param
           => true
 {% endhighlight %}
 
-Ok, after check we can start to add dry-auto_inject. First, we need to define the container to register all dependencies needed. To do this task, we need to create a file under config/initializers to register all dependencies.
+We have to define the container to register all dependencies needed. To reach it, we have to create a file under config/initializers to register dependencies.
 
 {% highlight ruby %}
 #config/initializers/auto_inject.rb
@@ -243,9 +244,9 @@ end
 AutoInject = Dry::AutoInject(Blog::Container)
 {% endhighlight %}
 
-At the last line of file, the constant AutoInject was defined, this constant will be used inside of ArticlesController to inject dependencies.
+Inside this file the constant AutoInject was defined, it will be useful inside ArticlesController to inject dependencies.
 
-To use the registered command, we need to include a reference to registered dependency. The code will be like this:
+To use the registered command, we have to include a reference to the registered dependency. The code will look as below:
 
 {% highlight ruby %}
 #app/controllers/articles_controller.rb
