@@ -9,29 +9,31 @@ cover: /assets/images/stoplightdiagram.png
 ---
 
 
-At this year I went to QCon São Paulo, I saw many cool things and lots of new technologies. In the conference, some speakers talked about how we can make resilient systems. Kolton Andrus ([slides][kolton-andrus]) spoke about of Netflix Toolset, he mentioned Spinnaker, Chaos Kong and Hystrix. I liked so much of Hystrix, because the concept behind this mechanism sounds very simple and can be useful in many situations. In this post, I will try to talk about it.
+At this year I went to QCon São Paulo, I saw many cool things and many new technologies. At the conference, some speakers talked about how we can make resilient systems. Kolton Andrus ([slides][kolton-andrus]) has spoken about of Netflix Toolset, he mentioned Spinnaker, Chaos Kong and Hystrix. I like so much of Hystrix, because the concept behind this mechanism sounds very simple and can be useful in many situations. In this post, I will try to talk about it.
 
-Oh, what is Hystrix? The Netflix describes Hystrix as "[...] a latency and fault tolerance library designed to isolate points of access to remote systems, services and 3rd party libraries, stop cascading failure and enable resilience in complex distributed systems where failure is inevitable.". Behind all advantages that it can give to us, it has a lot of patterns, but in this post I will write about only one, called of Circuit-Breaker.
+Oh, what is Hystrix? The Netflix describes Hystrix as "[...] a latency and fault tolerance library designed to isolate points of access to remote systems, services and 3rd party libraries, stop cascading failure and enable resilience in complex distributed systems where failure is inevitable.". Behind all advantages that it gives to us, this library has a lot of patterns, however in this post I will write about only one, called of Circuit-Breaker.
 
-We need to think about circuit-breaker. Let me see... Oh Circuit-Breaker pattern works like a home circuit-breaker, Obvious. But how it works? You can see it [here][homecircuitbreaker]. In IT world, this mechanism can be applied to some cases to prevent errors or decrease latency. Imagine, you have a call to an external service, in this scenario many things can fail, you can get network error, some server can be out, or something unexpected can occurs. If you want to make your system more resilient, you need to assume that your system can fail. To avoid that problem, you can respond a default response or with cache. Using a circuit-breaker, when something goes wrong N times, the circuit-breaker stops to call the failed method and pass to responds only with a fallback method. After a time period, the circuit-breaker try to call a method again, it can works or not.
+Let's think about circuit-breaker. Let me see... Oh Circuit-Breaker pattern works like a home circuit-breaker, Obvious. But, how it works? You can see it [here][homecircuitbreaker]. In IT world, this mechanism can be applied to some cases to prevent errors or decrease latency. Imagine that you have a call to an external service, in this scenario many things can fail, you can get network error, some server can be out, or something unexpected can occurs. **If you want to make your system resilient, you have to assume that your system can fail**.
 
-In this post, I will try to show some examples with the same app at the previous post. You can download it [here][experiences](please use version 0.0.2). I added Docker only to turn easier the environment setup, but you can use only ruby(>=2.2) and rails(>=5) to run.
+To avoid that problem, you can respond a default response or with cache. Using a circuit-breaker, when something goes wrong N times, the circuit-breaker stops to call failing method and responds only with a fallback response. After a time period, the circuit-breaker try to call a method again, it can works or not.
 
-I will show only one circuit-breaker gem available in Ruby, but if you search at RubyToolbox site you can found many similar solutions like [circuitbox][circuitbox] or [resilient][resilient]. In this post we will use the [stoplight][Stoplight] gem.
+In this post, I will try to show some examples with the same app that I created at the previous post. You can download it [here][experiences](please use version 0.0.2). I added Docker only to turn easier the environment setup, but you can use only ruby(>=2.2) and rails(>=5) to run.
 
-Ok, how it works? Well, we will see it together along this post. It's easier, at least for me, understand with examples.
+I will show only one the [stoplight][Stoplight] gem, if you search at RubyToolbox site you can found many similar solutions like [circuitbox][circuitbox] or [resilient][resilient], through.
 
-*Ps: To run with docker you can use 'docker-compose up' and after that 'docker exec -it <image-name/id> bash' to enter in bash. After that we need to type 'rails c'.*
+Ok, how it works? Well, we will see it together along this post. So, it's easier, at least for me, understand with examples.
 
-First thing that we need to do is add a new gem in this project, to do it we need to add this line in our Gemfile.
+*Ps: To run with docker you can use 'docker-compose up' and after that 'docker exec -it <image-name/id> bash' to enter in bash. In the end we have to type 'rails c'.*
+
+First of all, we have to add a new gem in this project, so the following line solves it.
 
 {% highlight ruby %}
 gem 'stoplight'
 {% endhighlight %}
 
-*Ps: Everytime that we add a new gem in Gemfile, we need to run 'docker-compose build' again and after that we can run 'docker-compose up'.*
+*Ps: Everytime that we add a new gem in Gemfile, we need to run 'docker-compose build'*
 
-In the project folder, we need to type the command below to start our server.
+At the project folder, we need to type the command below to start our server.
 
 {% highlight bash %}
  ~/projects/ruby/blog  docker-compose up
@@ -61,7 +63,7 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 
 {% endhighlight %}
 
-After that, we need to enter in rails c, to do this we need to type 'docker exec -it <image_name> -it bash" and 'rails c'.
+After that, we have to enter in rails console, so type 'docker exec -it <image_name> -it bash" and 'rails c'.
 
 {% highlight bash %}
 ~/projects/ruby/blog  docker exec -it blob_web_1 bash
@@ -77,7 +79,7 @@ The gem Stoplight is very illustrative, it works like a stoplight (Mr. Obvious a
 
 *Ps: I tried to extract the flux above from Stoplight code.*
 
-Now, we will play with gem and after that we will try to use it inside our simple 'blog' code.
+Now, let's play with this gem and, besides that we will try to use it inside our simple 'blog' code.
 
 {% highlight ruby %}
 root@e0e62e64b3ec:/var/www/experiences# rails c
@@ -97,9 +99,11 @@ irb(main):005:0> light.color
 => "green"
 {% endhighlight %}
 
-The code above shows how Stoplight works, to create a light we need to set an identifier, at this case 'example'. We also need to pass a code block that will be executed, in this case a lambda called 'function'. When we have a light, we can run it and the result of code block will be evaluated, we can get the light color too.
+The code above shows how Stoplight works, to create a light we must set an identifier, at this case 'example'. We have to pass a code block that will be executed, in this case a lambda called 'function'.
 
-Ok, if code works everytime when called this gem is unuseful, but if you have a code that can fail you can use it to avoid some error scenarios. Let's take a look when something goes wrong.
+When we have a light, we can run it and the result will be evaluated and also get the light color.
+
+Ok, if code works everytime when called this gem is unuseful, but if we have a code that can fail, we can use it to avoid some error scenarios. Let's take a look when something goes wrong.
 
 {% highlight ruby %}
 irb(main):010:0> function = -> { Blargh.new }
@@ -145,9 +149,13 @@ irb(main):023:0> light.color
 => "red"
 {% endhighlight %}
 
-The code above is similar than previous, we added a function that always will fail (at least since we define Blargh class), we also added some customizations like 'with_fallback' and 'with_cool_of_time'. The function 'with_fallback' defines a custom fallback, this code will be evaluated when something goes wrong. The function 'with_cool_of_time' defines a timer to turn to yellow and the next call will define if light will be green or red again. Don't be afraid with this, Stoplight has a nice documentation and you can see many examples at project [page][stoplight].
+The code above is similar than previous one, we added a function that always fail(at least since we define Blargh class), we also added some customizations like 'with_fallback' and 'with_cool_of_time'.
 
-When we have a huge application with multiple instances this code don't work well because Stoplight uses memory by default to store all light statuses. This gem already has a solution to it, we can use Redis to share lights statuses between the app instances. To do this we need to create a file at config/initializers and add the following code into it.
+The function 'with_fallback' defines a custom fallback, this code will be evaluated when something goes wrong.
+
+The function 'with_cool_of_time' defines a timer to turn to yellow and then the next call will define if light will be green or red again. Don't be afraid with this, Stoplight has a nice documentation and you can see many examples at project [page][stoplight].
+
+When we have a huge application with multiple instances this code don't work well because Stoplight uses memory by default to store all light statuses. This gem already has a solution to it, we can use Redis to share lights statuses between the app instances. So, we have to create a file at config/initializers and add the following code into it.
 
 {% highlight bash %}
  ~/projects/ruby/blog touch config/initializers/stoplight.rb
@@ -162,7 +170,7 @@ redis = Redis.new(host: ENV["REDIS"])
 Stoplight::Light.default_data_store = Stoplight::DataStore::Redis.new(redis)
 {% endhighlight %}
 
-Now, we will use Stoplight in article#show route to responds with a fallback when something goes wrong. We need to add too the possibility to fail, to do it, we will add a code that will fail randomically. We need to create a command too. You can use all code directly on Article.find, but I will use a command to keep same pattern.
+Now, we will use Stoplight in article#show route to responds with a fallback when something goes wrong. So, we have to add the possibility to fail then a code that fail can be useful. We also have to create a command. You can use all code directly on Article.find, but I will use a command to keep same pattern.
 
 Create a file into lib/commands/article folder, this command will be responsible to search an article and to encapsulate a circuit breaker behavior. Add the following lines into created file.
 {% highlight ruby %}
@@ -212,7 +220,7 @@ end
 
 Run 'docker-compose up' or 'rails s', create a article and see if everything works as expected.
 
-Now we are ready to put a stoplight inside our project. First thing to do is add the fail possibility. We will use the following code to determine if it will fail or no.
+Now we are ready to add the stoplight inside our project. First of all, we have to add the fail possibility. We will use the following code to determine if it will fail or no.
 
 {% highlight ruby %}
 def fail?
@@ -245,7 +253,7 @@ irb(main):001:0> Article.find 239882
   ActiveRecord::RecordNotFound: Couldn't find Article with 'id'=239882
 {% endhighlight %}
 
-But you don't need to responds with a fallback in this case. To around this problem we need to add the code below.
+But you don't need to responds with a fallback in this case. To around this problem we have to add the code below.
 
 {% highlight ruby %}
 def custom_error_handler(error, handle)
@@ -318,7 +326,7 @@ If you check your log, you will see something like this:
 
 We can add a custom notifier to something that you want when light changes the status from red to green or vice versa.
 
-Bonus: We can add a custom notifier in our project, to do it, we need to create a new file and add the following content:
+Bonus: We can add a custom notifier in our project, so take a look at the following example:
 {% highlight ruby %}
 touch lib/notifiers/custom.rb
 {% endhighlight %}
