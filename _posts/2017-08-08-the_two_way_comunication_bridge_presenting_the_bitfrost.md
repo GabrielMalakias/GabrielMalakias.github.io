@@ -1,6 +1,6 @@
 ---
 layout: post
-title: 'The two way communication bridge: Presenting the Bitfrost'
+title: 'IoT Saga - Part 5 - The two way communication bridge: Presenting the Bitfrost'
 date:   2017-08-08 00:00:00
 categories: java mqtt rxtx
 disqus: true
