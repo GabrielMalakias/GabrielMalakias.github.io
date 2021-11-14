@@ -8,15 +8,17 @@ description: Sidekiq
 cover: /assets/images/how_projects_evolve.jpg
 ---
 
-Systems, languages and projects come and go as people progress in their own careers, solutions that were not so obvious in the beginning might become easier to tackle as project and team evolves. In this post I would like to share a bit about my experience on scaling a system that I worked with by observing and trying to understand the problem before thinking about changing the technology completely or even choosing the wrong one again.
+Systems, languages, and applications come and go as people progress in their own careers, solutions that were not so obvious in the beginning, become easier to tackle as application and team evolves. In this post, I would like to share a bit about my experience on scaling a system that I worked with, by observing and trying to understand the problem before thinking about changing the technology completely.
 
-While working at Delivery Hero I had the opportunity to migrate a system to a new one at that point it was decided to keep the same language but trying to avoid bottlenecks. One of multiple problems that prevented initial solution from scaling nicely was a loop that checks every single delivery and rider applying or not actions based on configurations the app allows.
+While working at Delivery Hero I had the opportunity to migrate a system to a new one. At that point, it was decided to keep the same language but trying to avoid bottlenecks. One of multiple problems, that prevented the initial solution from scaling nicely, was a loop that checks every single delivery and rider applying or not actions based on configurations the app allows.
 
-Unfortunately I cannot share the exact same code but I created something that represents the problem pretty well however I will try to guide you through the process with an example talking about the past, present and what was my idea about the future.
+Unfortunately I cannot share the exact same code but I created something that represents the problem pretty well so I will try to guide you through the same process I went through talking about the past, present and what was my idea about the future.
 
 #### The past
 
-Imagine you are building a software that keeps track of a mobile device's position. One of the reasons why the solution has to check is that we would like to identify as soon as possible if the device is off applying a series of rules. To handle that, our initial solution loops through a list of devices checking if the latest location was received recently, so the app can change the device status to `out_of_range` and in case its out of range for two periods in a row it marks the device as `offline`.
+Imagine you are building a software that keeps track of a mobile device's position. As goal, the application you are working on has to keep track of a state and given an interval it should check a bunch of if clauses to take or not actions based on the state.
+
+To handle that, our initial solution loops through a list of devices checking if the latest location was received recently, so the app can change the device status to `out_of_range` and in case its out of range for two periods in a row it marks the device as `offline`.
 
 {% highlight ruby %}
   def call
@@ -33,8 +35,9 @@ Imagine you are building a software that keeps track of a mobile device's positi
     end
   end
 {% endhighlight %}
+* *The code above is just a small part of the solution, for the full code please take a look [here][initial-rb]*
 
-So by simply executing the method above every 1 minute we could easily solve the problem. Nice, but wait what are the problems within this simple solution.
+So by simply executing the method above every 1 minute it solves the problem in possible way, however what are the problems within this simple solution?
 
 Based in my experience I can enumerate a few:
 
@@ -96,4 +99,9 @@ However the solution using genservers is not perfect because it eliminates the r
 
 Rewriting an app is something costly and it also demands time, not only due to the rewriting itself but also for the project to reach the maturity. It should also never be only to use the fanciest brand new languaged that has just appeared backed by Google, furthermore I strongly believe that programming languages are tools in our utility belt and even though we as developers we have our preferences (me included, I :heart Ruby) we should always be accontable to use the best tool to the right job.
 
+
+#### References
+
 Cover Photo by <a href="https://unsplash.com/@chrislawton?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Chris Lawton</a> on <a href="https://unsplash.com/s/photos/seasons?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText">Unsplash</a>
+
+[initial-rb]: https://github.com/GabrielMalakias/surveillance/blob/master/initial.rb
