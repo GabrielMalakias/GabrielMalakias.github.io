@@ -1,7 +1,7 @@
 ---
 layout: post
-title: 'How projects evolve - An experience guided by results'
-date:   2021-11-11 00:00:00
+title: 'Software evolves - An experience guided by results'
+date:   2021-11-15 00:00:00
 categories: ruby sidekiq actormodel
 disqus: true
 description: Sidekiq
@@ -10,7 +10,7 @@ cover: /assets/images/how_projects_evolve.jpg
 
 Systems, languages, and applications come and go as people progress in their own careers, problems that had not so obvious solutions in the beginning, become easier to tackle as application and team evolves. In this post, I would like to share a bit about my experience on migrating and scaling a system that I worked with, by observing and trying to understand the problem before thinking about changing the technology completely.
 
-There are multiple factors that influences the team to use a language, it can go through speed constraints or team familiarity to the language to how fast people expect things to be done. However I believe no language is perfect, no language will allow you and your team to scale 10, 20, 100 times if the approach is not the correct one from the beginning and since its quite common to make mistakes without the full picture of whatever you are developing.
+There are multiple factors that influences the team to use a language, it can go through speed constraints, team familiarity to the language or how fast people expect things to be done. However I believe no language is perfect, no language will allow you and your team to scale 10, 20, 100 times because no language does that but software architecture does. Software changes, sometimes completely. Its like writing a post or a book sometimes you start with a small idea and in the end one might end with something completely different. So as you might imagine its quite hard to get everything right from the beginning.
 
 While working at Delivery Hero, I had the opportunity to work in a team that was reponsible for migrating the system to a new one. At that point, it was decided to keep the same language but avoiding obvious bottlenecks.
 
@@ -20,9 +20,9 @@ Unfortunately I cannot share the exact same code, but I created something that r
 
 #### The past
 
-Imagine you are building a software that keeps track of a mobile device's position. As goal, the application you are working on has to keep track of a state and after a certain period it should check a bunch of if clauses to take or not actions based on the state.
+Imagine you are building a software that keeps track of a mobile device's position. As goal, the application has to keep track of a state, and after a certain period it should check a bunch of rules to take or not actions based on the state.
 
-To handle that, the initial solution loops through a list of devices checking if the latest location was received recently, so the app can change the device status to `out_of_range` and in case its out of range for two periods in a row it marks the device as `offline`.
+To handle that, the initial solution loops through a list of devices checking if the latest location was received recently and if it doesnt the app changes the device status to `out_of_range`. Besides that in case the device is already `out_of_range` for two periods in a row it marks the device as `offline`.
 
 {% highlight ruby %}
 filter_online.each do |person|
@@ -32,9 +32,9 @@ end
 {% endhighlight %}
 *The code above is just a small part of the solution, for the full version please take a look [here][past-rb]*
 
-The code above could be executed every minute making it a pretty ok solution, right?
+By executing the function above every minute the problem is solved, right?
 
-Hold on, what if each check takes one second? As you might notice we have a O(N) here and according to [Rob Bell](https://rob-bell.net/2009/06/a-beginners-guide-to-big-o-notation)
+Hold on, what if each check takes one second? As you might notice, we have a O(N) here and according to [Rob Bell](https://rob-bell.net/2009/06/a-beginners-guide-to-big-o-notation)
 
 *"O(N) describes an algorithm whose performance will grow linearly and in direct proportion to the size of the input data set."*
 
@@ -50,7 +50,7 @@ I might be missing others but I think the idea its pretty clear here, it doesnt 
 
 One of the things I've been experimenting along these years is Elixir. From a Ruby developer perspective, the language is quite familiar and it has the awesome and battleproven OTP providing great actor model system based on GenServer. However as every technology it takes time and a huge effort for companies and people to start considering it. Well, as Ruby and Rails was already familiar for most of the team members and the risk had to be minimized, the second version was written in Ruby using Rails as web framework. Giving us a quite mature solution that offers also stable foundation for 90% of the web related problems. So how was it implemented?
 
-The problems with the initial solution are scaling and making it independent from each other. So what if each device could be checked individually with its own "process", not affecting any others without changing the language and using only sidekiq? That would be pretty cool, right?
+The problems with the initial solution are scaling and making each check independent from each other. So what if each device could be checked individually with its own "process", not affecting any others without changing the language? That would be pretty cool, right?
 
 The proposed solution would look like a recursive call using Sidekiq to treat errors, something like the following
 
@@ -79,7 +79,7 @@ end
 
 Lets now go back to the problems we had in the initial solution to validate if new solution is better or worse.
 
-About the first problem, now the execution time is only O(1) since now each device is managed by its own job individually, it also can no longer affect any other or even stop the process, so thats a win. Now jobs go to redis and can easily distributed across nodes, besides that Kubernetes HPA can be used to increase the number of pods as the number of jobs increases by checking cpu levels, cool right? The service we rewrote this approach pretty much everywhere within its core.
+About the first problem, now the execution time is only O(1) per job since now each device is managed by its own job individually. Of course it also adds some overhead for each job, but it can no longer affect any other device or even stop the process, so thats a win. Now jobs go to redis and can easily distributed across nodes, besides that Kubernetes HPA can be used to increase the number of pods as the number of jobs increases by checking cpu levels, cool right? The service we rewrote this approach pretty much everywhere within its core.
 
 I can say that the solution above scales pretty well, after changing adopting the Sidekiq Pro and it's `reliable_scheduler` it got even better. Features that were impossible before like decreasing intervals to 10 seconds or even customising the processing flow, started becoming quite easy and straightforward. The company grew a lot, it went from 800 thousand orders daily to something like 5 or 6 million, in our biggest country we have the following numbers:
 
@@ -92,7 +92,7 @@ Even though the current approach scales pretty well, it doesnt scale infinitely,
 
 Wait, there is a way to solve that, the solution we found was using PGBouncer in transaction mode, so each query to the DB executes quite fast creating like a ConnectionPool for all the pods.
 
-Cool, all problems solved right? Temporarely, this solution scales until a certain point due to DB constraits, at some point the DB if for some reason any slow query is introduced or too many things are executed in parallel we notice the following behaviour.
+Cool, all problems solved right? Temporarely, this solution scales until a certain point due to DB constraints, at some point the DB if for some reason any slow query is introduced or too many things are executed in parallel we notice the following behaviour.
 
 ![Client waiting - PGBouncer]({{ site.url }}/assets/images/pgbouncer_client_waiting.png)
 
@@ -106,13 +106,18 @@ And here we are, the present. How can we make things better?
 
 ### The desired future
 
-The problem faced now its not about the language so changing to Go or *insert-your-fancy-technology-here* wont solve the problem because it lies in the approach itself, remember the actor model? Well if the app didnt have to search things in the DB for every single job and process the problem would be avoided. How would that look like?
+The problem faced now its not about the language so changing to Go or *insert-your-fancy-technology-here* wont solve the problem because it lies in the approach itself, remember the actor model? Well if the app didnt have to search things in the DB for every single job the problem would be avoided. How would that look like?
 
 While migrating the application to the new approach, we had the opportunity to write a load-test app in elixir to understand better what are the pain points of using this tool, unfortunately I believe I wont have time to work on it but I know that would be pretty viable. The solution using genservers is not perfect, it eliminates the round-trips to the DB but it might increase the memory consumption considerably. Another point is that the state would have to be pretty well managed to avoid unexpected bugs or problems but I still believe that's a best solution compared to the Sidekiq recursive approach.
 
 ### Conclusion
 
-As Developers, Software engineers or whatever name you might use, we like to learn new languages and always use the newest one, however just changing the language by itself doesnt improve things magically. Most of apps that I worked on so far are heavily limited by external calls (HTTP, DB, Network) so in most of the cases if you are running a web app, it doesnt matter much how fast the language is, if you are doing things right it should be enough. Not everybody is the Google. For me it matters way more things like how easy to maintain and onboard new members or how fast to deploy and run specs allowing cycles to run faster and that doesnt depend on the language itself. So before considering moving to other language and wasting time and money, try to improve the project you are working on, MEASURE, observe your system, know the weeknesses and the strenghts, try to talk to other people and share your ideas/problems with other people by writing or talking. If you want to take one thing from this post just consider applying the Scientific Method that according to [Sedgewick & Wayne](https://algs4.cs.princeton.edu/home/) is something like:
+As Developers, Software engineers or whatever name you might use, we like to learn new languages and sometimes to use newest one, however just changing the language by itself doesnt improve things magically.
+
+Most of apps that I worked on so far are heavily limited by external calls (HTTP, DB, Network) so in most of the cases if you are running a web app, it doesnt matter much how fast the language is, if you are doing things right it should be enough. Not everybody is the Google. For me it matters way more features like how easy to maintain, onboard new members, how fast to deploy, and run specs allowing cycles to run faster and that doesnt depend on the language itself.
+
+So before considering moving to other language and wasting time and money, try to improve the project you are working on, MEASURE, observe your system, know the weeknesses and the strenghts, try to talk to other people and share your ideas/problems with others. If you want to take one thing from this post just consider applying the Scientific Method that according to [Sedgewick & Wayne](https://algs4.cs.princeton.edu/home/) is:
+
 
 * *"Observe some feature of the natural world, generally with precise measurements;*
 * *Hypothesize a model that is consistent with the observations;*
