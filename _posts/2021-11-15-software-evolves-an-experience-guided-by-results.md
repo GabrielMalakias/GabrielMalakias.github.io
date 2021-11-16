@@ -77,7 +77,7 @@ end
 {% endhighlight %}
 *For the full version please take a look [here][present-rb]*
 
-Lets now go back to the problems we had in the initial solution to validate if new solution is better or worse.
+Lets now go back to the problems we had initially to validate if new solution is better or worse.
 
 About the first problem, now the execution time is only O(1) per job since now each device is managed by its own job individually. Of course it also adds some overhead for each job, but it can no longer affect any other device or even stop the process, so thats a win. Now jobs go to redis and can easily distributed across nodes, besides that Kubernetes HPA can be used to increase the number of pods, as the number of jobs increases, by checking cpu levels, cool right? The service we rewrote this approach pretty much everywhere within its core.
 
