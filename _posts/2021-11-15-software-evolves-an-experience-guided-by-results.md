@@ -38,7 +38,7 @@ Hold on, what if each check takes one second? As you might notice, we have a O(N
 
 *"O(N) describes an algorithm whose performance will grow linearly and in direct proportion to the size of the input data set."*
 
-Taking that into consideration, once the app have 61 devices it no longer able to run the solution in one minute and our solution will be invalid. Furthermore, based on my experience I can enumerate a few others like:
+Taking that into consideration, once the app have 61 devices it no longer able to run the solution in one minute and our solution will be invalid. Furthermore, based on my experience I can enumerate a few others issues like:
 
 1. If a single device returns an error or the app crashes, the devices which were not checked yet will have wait until the next period to be processed;
 2. Given that the solution sequential, its impossible to distribuite the load across different instances, pods or threads;
@@ -48,7 +48,7 @@ I might be missing others but I think the idea its pretty clear here, it doesnt 
 
 ### The present
 
-One of the things I've been experimenting along these years is Elixir. From a Ruby developer perspective, the language is quite familiar and it has the awesome and battleproven OTP providing great actor model system based on GenServer. However as every technology it takes time and a huge effort for companies and people to start considering it. Well, as Ruby and Rails was already familiar for most of the team members and the risk had to be minimized, the second version was written in Ruby using Rails as web framework. Giving us a quite mature solution that offers also stable foundation for 90% of the web related problems. So how was it implemented?
+One of the things I've been experimenting along these years is Elixir. From a Ruby developer perspective, the language is quite familiar and it has the awesome and battleproven OTP providing great actor model system based on GenServer. However as with every technology, it takes time and a huge effort for companies and people to start considering it. Well, as Ruby and Rails was already familiar for most of the team members and the risk had to be minimized, the second version was written in Ruby using Rails as web framework. Giving us a quite mature solution that offers also stable foundation for 90% of the web related problems. So how was it implemented?
 
 The problems with the initial solution are scaling and making each check independent from each other. So what if each device could be checked individually with its own "process", not affecting any others without changing the language? That would be pretty cool, right?
 
@@ -79,20 +79,20 @@ end
 
 Lets now go back to the problems we had in the initial solution to validate if new solution is better or worse.
 
-About the first problem, now the execution time is only O(1) per job since now each device is managed by its own job individually. Of course it also adds some overhead for each job, but it can no longer affect any other device or even stop the process, so thats a win. Now jobs go to redis and can easily distributed across nodes, besides that Kubernetes HPA can be used to increase the number of pods as the number of jobs increases by checking cpu levels, cool right? The service we rewrote this approach pretty much everywhere within its core.
+About the first problem, now the execution time is only O(1) per job since now each device is managed by its own job individually. Of course it also adds some overhead for each job, but it can no longer affect any other device or even stop the process, so thats a win. Now jobs go to redis and can easily distributed across nodes, besides that Kubernetes HPA can be used to increase the number of pods, as the number of jobs increases, by checking cpu levels, cool right? The service we rewrote this approach pretty much everywhere within its core.
 
-I can say that the solution above scales pretty well, after changing adopting the Sidekiq Pro and it's `reliable_scheduler` it got even better. Features that were impossible before like decreasing intervals to 10 seconds or even customising the processing flow, started becoming quite easy and straightforward. The company grew a lot, it went from 800 thousand orders daily to something like 5 or 6 million, in our biggest country we have the following numbers:
+Based on the experience I had writing this app, I can tell you that the solution above scales pretty well, after adopting the Sidekiq Pro and it's `reliable_scheduler` it got even better. Features that were impossible before like decreasing intervals to 10 seconds or even customising the processing flow, started becoming quite easy and straightforward. The company grew a lot, it went from 800 thousand orders daily to something like 5 or 6 million, in our biggest country we have the following numbers:
 
 ![Sidekiq pro dashboard]({{ site.url }}/assets/images/sidekiq-pro-issue-service.png)
 *40 million jobs every day in a single country not too shabby*
 
-Even though the current approach scales pretty well, it doesnt scale infinitely, at least not in the way we have right now. As you might know Postgres has a limit in number of connections and as we add more and more pods to handle the increasing number of messages, jobs and so on at some point it will be just unbearable to the DB.
+Even though the current approach scales pretty well, it doesnt scale infinitely, at least not in the way we have right now. As you might know Postgres has a limit in number of connections and with that as we add more and more pods to handle the increasing number of jobs at some point it will be just unbearable to the DB.
 
 ![Oh my]({{ site.url }}/assets/images/oh-my-meme.png)
 
 Wait, there is a way to solve that, the solution we found was using PGBouncer in transaction mode, so each query to the DB executes quite fast creating like a ConnectionPool for all the pods.
 
-Cool, all problems solved right? Temporarely, this solution scales until a certain point due to DB constraints, at some point the DB if for some reason any slow query is introduced or too many things are executed in parallel we notice the following behaviour.
+Cool, all problems solved right? Temporarely, this solution scales until a certain point due to DB constraints, at some point if for some reason any slow query is introduced or too many things are executed in parallel we noticed the following behaviour.
 
 ![Client waiting - PGBouncer]({{ site.url }}/assets/images/pgbouncer_client_waiting.png)
 
@@ -100,24 +100,23 @@ Too many clients start pilling up on PGBouncer slowing things down affecting the
 
 The app is currently able to handle 5x the load ever had in production but things have to be improved in the future.
 
-Things like cache and further query optimizations might minimize round-trips to the DB tend improving the general performance but the DB will always be the limiting factor here.
+Things like cache and further query optimizations might minimize round-trips to the DB tend to improve the general performance but the DB will always be the limiting factor here.
 
 And here we are, the present. How can we make things better?
 
 ### The desired future
 
-The problem faced now its not about the language so changing to Go or *insert-your-fancy-technology-here* wont solve the problem because it lies in the approach itself, remember the actor model? Well if the app didnt have to search things in the DB for every single job the problem would be avoided. How would that look like?
+The problem faced now its not about the language, so changing to Go or *insert-your-fancy-technology-here* wont solve the problem because it lies in the approach itself, remember the actor model? Well if the app didnt have to search things in the DB for every single job the problem would be avoided. How would that look like?
 
-While migrating the application to the new approach, we had the opportunity to write a load-test app in elixir to understand better what are the pain points of using this tool, unfortunately I believe I wont have time to work on it but I know that would be pretty viable. The solution using genservers is not perfect, it eliminates the round-trips to the DB but it might increase the memory consumption considerably. Another point is that the state would have to be pretty well managed to avoid unexpected bugs or problems but I still believe that's a best solution compared to the Sidekiq recursive approach.
+While migrating the application to the new approach, we had the opportunity to write a load-test app in elixir to understand better what are the pain points of using this tool, unfortunately I believe I wont have time to work on it but I know that would be pretty viable. The solution using GenServers is not perfect, though, it eliminates the round-trips to the DB but it might increase the memory consumption considerably. Another point is that the state would have to be pretty well managed to avoid unexpected bugs or problems but I still believe that's a best solution compared to the Sidekiq recursive approach.
 
 ### Conclusion
 
 As Developers, Software engineers or whatever name you might use, we like to learn new languages and sometimes to use newest one, however just changing the language by itself doesnt improve things magically.
 
-Most of apps that I worked on so far are heavily limited by external calls (HTTP, DB, Network) so in most of the cases if you are running a web app, it doesnt matter much how fast the language is, if you are doing things right it should be enough. Not everybody is the Google. For me it matters way more features like how easy to maintain, onboard new members, how fast to deploy, and run specs allowing cycles to run faster and that doesnt depend on the language itself.
+Most of apps that I worked on so far are heavily limited by external calls (HTTP, DB, Network) so in most of the cases if you are running a web app, it doesnt matter much how fast the language is, if you are doing things right it should be enough. Not everybody is the Google. For me, it matters way more features like how easy to maintain, onboard new members, how fast to deploy, and run specs allowing cycles to run faster and that doesnt depend on the language itself.
 
 So before considering moving to other language and wasting time and money, try to improve the project you are working on, MEASURE, observe your system, know the weeknesses and the strenghts, try to talk to other people and share your ideas/problems with others. If you want to take one thing from this post just consider applying the Scientific Method that according to [Sedgewick & Wayne](https://algs4.cs.princeton.edu/home/) is:
-
 
 * *"Observe some feature of the natural world, generally with precise measurements;*
 * *Hypothesize a model that is consistent with the observations;*
