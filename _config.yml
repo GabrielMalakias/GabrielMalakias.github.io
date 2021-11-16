@@ -7,10 +7,9 @@ markdown: kramdown
 highlighter: rouge
 logo: false
 paginate: 5
-baseurl: 'http://gabrielmalakias.com.br/'
 domain_name: 'gabrielmalakias.com.br'
 google_analytics: 'UA-87321020-1'
 gems: [jekyll-paginate, jekyll-seo-tag, jekyll-sitemap]
 
-url: 'http://gabrielmalakias.com.br'
+url: 'https://gabrielmalakias.com.br'
 author: 'Gabriel Malaquias'
