@@ -1,0 +1,186 @@
+I"F<p>Hello, Today I will talk about I’ve been learning. My first language at college was Java, from my point of view this language enforces you to learn many things.  By the time, I remember how many hours I spent learning Software Engineering and Design Patterns to build all requested homework. Even through different than a many developers that I met, I enjoyed so much my course.</p>
+
+<p>When I decided to learn Ruby I also started with Rails (I’m still using it everyday) the most common choice. Rails is great, this incredible framework allows us to build applications very fast. It uses Convention over Configuration and combine a very powerful toolkit to improve our productivity. On the other hand, some applications that I worked on could be better with using a different mindset. Don’t get me wrong, I like Rails but we can try another framework, language or paradigm.</p>
+
+<p>I decided to experiment Hanami, because I saw a good talk of <a href="https://twitter.com/mereghost">Marcello Rocha</a> on RubyConf 2016 and also I can learn new approaches. I will share my throughts about Hanami along this post.</p>
+
+<h3 id="about-the-project">About the project</h3>
+
+<p>I intend to build a kind of dashboard where I can manage and send commands my arduino sensors and actuators. To reach my goal I’m going to create three applications (Usgard, Mygard and Bitfrost).</p>
+
+<p>The first one will be the dashboard, <a href="https://github.com/GabrielMalakias/usgard">Usgard</a>. The first part of this saga mentions <a href="http://gabrielmalakias.com.br/hanami/iot/docker/2017/02/14/iot-saga-my-setup-for-a-hanami-application.html">SpaceWing</a> as project name but I decided to rename it. I chose this name because makes me remember Asgard, where Nordic Gods live. From there Gods can send commands and collect informations from worlds like Midgard. The second one, called Mygard, will receive commands and send data to RXTX. The third one will be the Bitfrost, the application to connect Mygard and Usgard.</p>
+
+<p>There is a diagram to explain my basic idea (I intend to change the architeture):</p>
+
+<p><img src="http://localhost:4000/assets/images/usgard_perspective.png" alt="usgard_perspective" /></p>
+
+<p>Well, as you’ve seen above, I intend combine different technologies to create this dashboard. I want to combine this Stack because Java sounds familiar to me and a currently I know how I can combine them. My main aim is build a sandbox where I can test and create new things.</p>
+
+<p>Usgard uses Hanami as WebFramework and PahoJS as WebSocket connector. I didn’t find something cool to my JS yet, I would use React, Redux or something that I don’t know. :) Suggestions?</p>
+
+<p>I created two entities to manage my data, I called the first one Sensor and the another one Actuator. On the show page we can see the Sensor/Actuator information and send messages in actuator’s page. I didn’t finish the first version yet, but I learnt some new things using Hanami and I will share it with you.</p>
+
+<h3 id="the-bright-side">The bright side</h3>
+
+<h5 id="disclaimer">DISCLAIMER</h5>
+<p><strong><em>First of all, this post represents only my opinion about the topics discussed, I do not intent to hurt anyone or something else. Think by yourself and get your own conclusions. I like to learn new ways to build applications and it can push me forward.</em></strong></p>
+
+<h6 id="1-decreases-the-coupling-between-domain-and-persistence-layer">1. Decreases the coupling between domain and persistence layer</h6>
+
+<p>Well, I usually saw examples like the following diagram at college:</p>
+
+<p><img src="http://localhost:4000/assets/images/repository.gif" alt="dao-java" /></p>
+<ul>
+  <li><em>Extracted from: https://martinfowler.com/eaaCatalog/repository.html</em></li>
+</ul>
+
+<p>Now, I can remember how was boring to write all Repository implementations using pure JDBC only to populate my POJO classes, but I was starting. By the time I didn’t know any technology capable to it by itself. After that I learnt a little of SpringJPA then when I was learning it, I saw something like the following code:</p>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">UserRepository</span> <span class="kd">extends</span> <span class="nc">CrudRepository</span><span class="o">&lt;</span><span class="nc">User</span><span class="o">,</span> <span class="nc">Long</span><span class="o">&gt;</span> <span class="o">{</span>
+  <span class="nc">Long</span> <span class="nf">countByLastname</span><span class="o">(</span><span class="nc">String</span> <span class="n">lastname</span><span class="o">);</span>
+<span class="o">}</span>
+</code></pre></div></div>
+<p>This example made me think. Why do they use Repository to search instead use an ORM like us (Ruby on Rails programmers)? Although we use ActiveRecord because is natural for us and usually solve our problems very well, we can try something different.</p>
+
+<p>Using Hanami models we have:</p>
+
+<p><strong><em>“Entity - A model domain object defined by it’s identity.
+Repository - An object that mediates between the entities and the persistence layer.”</em></strong> - <a href="http://hanamirb.org/guides/models/overview/">Hanami documentation</a></p>
+
+<p>We can create models and repositories using a command or create it by ourselves. Running the command below, Hanami creates the entity, the repository to manipulate data and the migration file. Inside it, we can describe the table columns and types to represent our Entity.</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code>~/projects/ruby/usgard<span class="o">(</span>dev ✔<span class="o">)</span> bundle <span class="nb">exec </span>hanami generate model blargh
+
+      create  lib/usgard/entities/blargh.rb
+      create  lib/usgard/repositories/blargh_repository.rb
+      create  db/migrations/20170402190609_create_blarghs.rb
+      create  spec/usgard/entities/blargh_spec.rb
+      create  spec/usgard/repositories/blargh_repository_spec.rb
+</code></pre></div></div>
+
+<p>From my point of view, the Repository pattern is good because removes the responsibility to manage database from models. Moreover this pattern can keep our models simpler and guide us to the <a href="https://www.toptal.com/software/single-responsibility-principle">Single Responsibility principle</a>.</p>
+
+<h5 id="2-views">2. Views</h5>
+
+<p><strong><em>“The Rails framework provides a large number of helpers for working with assets, dates, forms, numbers and model objects, to name a few. These helpers are available to ALL TEMPLATES by default.</em></strong></p>
+
+<p><strong><em>In addition to using the standard template helpers provided, creating custom helpers to extract complicated logic or reusable functionality is strongly encouraged.”</em></strong> - <a href="http://api.rubyonrails.org/classes/ActionController/Helpers.html">Rails documentation</a></p>
+
+<p>I usually saw Rails applications using Helpers to create anything sharing these custom methods along the application. I know Rails Helpers is different to the concept of Hanami Views but view layer is a good addiction to encapsulates only the necessary code. Well, the Hanami definition for Views is that:</p>
+
+<p><strong><em>“A view is an object that encapsulates the presentation logic of a page. A template is a file that defines the semantic and visual elements of a page. In order to show a result to a user, a template must be rendered by a view.”</em></strong> - <a href="https://github.com/hanami/view">Hanami documentation</a></p>
+
+<h5 id="3env-files">3.Env files</h5>
+
+<p>According to <a href="https://12factor.net/config">Twelve-Factor</a>, config files as database.yml in Rails, is a big improvement instead constants along application. On the other hand, it’s easy to send these files mistakenly to code repo and also every language adopt a different format each other.
+The Twelve-Factor suggest to us, to use Environment variables instead config/*.yml to decrease the chance to send to credentials to the code repo. Furthermore, it’s a “language- and OS-agnostic standard”</p>
+
+<p>At <a href="http://gabrielmalakias.com.br/hanami/iot/docker/2017/02/14/iot-saga-my-setup-for-a-hanami-application.html">part one</a>, I showed how I made my application setup using Docker. Using env-vars instead config files turned it easier. Besides that, if you think about Environment automatization and Virtualization this concept would be good.</p>
+
+<h5 id="4-controllers">4. Controllers</h5>
+
+<p>I strongly believe it’s the best point of Hanami. Hanami uses Actions instead Controllers. The Action Layer allows us to:</p>
+
+<ul>
+  <li><strong><em>Create whitelisting:</em></strong> to permit only trusted data;</li>
+  <li><strong><em>Create custom validations:</em></strong> Hanami::Validation uses the power of Dry-Validation as dependency then we can build our validations</li>
+  <li><strong><em>Create custom exception management:</em></strong> We can change the status or execute an method, for example;</li>
+  <li><strong><em>Expose our variables using exposures:</em></strong> to grant encapsulation;</li>
+  <li><strong><em>Use callbacks:</em></strong> I tend to avoid it, but some times we need to execute a method before Action#call;</li>
+</ul>
+
+<p>And many other things, you can check it at <a href="https://github.com/hanami/controller">project page</a>.</p>
+
+<p>I created an action in my project and I used the following structure to all actions, at least now.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="nn">Web::Controllers::Sensors</span>
+  <span class="k">class</span> <span class="nc">Create</span>
+    <span class="kp">include</span> <span class="no">Web</span><span class="o">::</span><span class="no">Action</span> <span class="c1"># Action mixin (Composition over Inheritance)</span>
+
+    <span class="c1"># Dry-AutoInject \o/, I used but it isn't default</span>
+    <span class="kp">include</span> <span class="o">::</span><span class="no">AutoInject</span><span class="p">[</span><span class="s1">'commands.sensor.create'</span><span class="p">]</span>
+
+
+    <span class="c1"># Input validation using the power of Dry-Validation</span>
+    <span class="n">params</span> <span class="k">do</span>
+      <span class="n">required</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">).</span><span class="nf">schema</span> <span class="k">do</span>
+        <span class="n">required</span><span class="p">(</span><span class="ss">:name</span><span class="p">).</span><span class="nf">filled</span><span class="p">(</span><span class="ss">:str?</span><span class="p">)</span>
+        <span class="n">required</span><span class="p">(</span><span class="ss">:mqtt_topic</span><span class="p">).</span><span class="nf">filled</span><span class="p">(</span><span class="ss">:str?</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+
+    <span class="c1"># Custom status returned when an Exception is raised</span>
+    <span class="n">handle_exception</span> <span class="no">ArgumentError</span> <span class="o">=&gt;</span> <span class="mi">422</span>
+
+
+    <span class="c1"># Single method to execute the action</span>
+    <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+      <span class="k">if</span> <span class="n">params</span><span class="p">.</span><span class="nf">valid?</span>
+
+        <span class="c1"># Similar to Interactions, they use something similar at Dnsimple, you can check at: https://blog.dnsimple.com/2017/03/why-we-ended-up-not-using-rails-for-our-new-json-api/</span>
+        <span class="n">sensor</span> <span class="o">=</span> <span class="n">create</span><span class="o">.</span><span class="p">(</span><span class="n">params</span><span class="p">.</span><span class="nf">get</span><span class="p">(</span><span class="ss">:sensor</span><span class="p">))</span>
+
+        <span class="n">redirect_to</span> <span class="n">routes</span><span class="p">.</span><span class="nf">sensor_url</span><span class="p">(</span><span class="ss">id: </span><span class="n">sensor</span><span class="p">.</span><span class="nf">id</span><span class="p">)</span>
+      <span class="k">else</span>
+        <span class="k">raise</span> <span class="o">::</span><span class="no">ArgumentError</span><span class="p">,</span> <span class="n">params</span><span class="p">.</span><span class="nf">errors</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>The use of Commands or Interations mixed with the possibility to customize my actions before send it to Repository made me very happy. I made my model responsible only to store state like the <a href="http://blog.steveklabnik.com/posts/2011-09-06-the-secret-to-rails-oo-design">PORO</a> concept.</p>
+
+<h5 id="5-umbrella-applications">5. Umbrella applications</h5>
+
+<p>Sometimes we need to create application that shares the same common code. Hanami allows us to create applications inside the our application using the Umbrella concept. This concept allows us to create many applications sharing entities and repositories.</p>
+
+<p><strong><em>We know that the set of features that we’re going to introduce doesn’t belong to our main UI (Web). On the other hand, it’s too early for us to implement a microservices architecture, only for the purpose of helping our users reset their password.</em></strong> - <a href="http://hanamirb.org/guides/architecture/overview/">Hanami Guide</a></p>
+
+<p>The Premature Optimization problem can be applied here. Usually working at some startup or a company project wants to be released as fast as we can. Although we prefer to build isolated application, usually we don’t have time enough to create microservices. Using umbrella applications would be a good start to solve this problem.</p>
+
+<h3 id="the-not-so-bright-side">The not so bright side</h3>
+
+<p>Well, when I was building my first test application (Usgard is my second one), I faced two questions. The first one was <em>How can I run sidekiq?</em> It was suffice a quick look at the project issues and I saw my <a href="https://github.com/hanami/hanami/issues/695">answer</a>, I was using the version 0.9. A little time later, on 1.0.0beta1 it was solved because Hanami added the config/boot.rb as default.</p>
+
+<p>The second one was a question about routes. I have three applications and I mounted to routes file as below.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mount</span> <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Web</span><span class="p">,</span>     <span class="ss">at: </span><span class="s1">'/sidekiq'</span>
+<span class="n">mount</span> <span class="no">Api</span><span class="o">::</span><span class="no">Application</span><span class="p">,</span> <span class="ss">at: </span><span class="s1">'/api'</span>
+<span class="n">mount</span> <span class="no">Web</span><span class="o">::</span><span class="no">Application</span><span class="p">,</span> <span class="ss">at: </span><span class="s1">'/'</span>
+</code></pre></div></div>
+
+<p>It was my first contact and I mistakenly changed the order as the following example.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">mount</span> <span class="no">Web</span><span class="o">::</span><span class="no">Application</span><span class="p">,</span> <span class="ss">at: </span><span class="s1">'/'</span>
+<span class="n">mount</span> <span class="no">Sidekiq</span><span class="o">::</span><span class="no">Web</span><span class="p">,</span>     <span class="ss">at: </span><span class="s1">'/sidekiq'</span>
+<span class="n">mount</span> <span class="no">Api</span><span class="o">::</span><span class="no">Application</span><span class="p">,</span> <span class="ss">at: </span><span class="s1">'/api'</span>
+</code></pre></div></div>
+<p>After that, when I visited ‘/sidekiq’ route it redirects to my ‘/’. I wasted at least two hours to figure out what I did wrong.</p>
+
+<p>Using Hanami maybe you can feel alone or cannot find your answer on internet, in these cases you can go to <a href="https://gitter.im/hanami/chat">Hanami Chat</a> to request help or take a look at the <a href="https://github.com/hanami/hanami">codebase</a>.</p>
+
+<p>I think Rails is great and Hanami too. Hanami released the 1.0.0 and a new core team was created then I really believe on this project.</p>
+
+<p>Thanks @Hanamirb and @Rails teams and contribuitors!</p>
+
+<h3 id="references">References</h3>
+
+<ul>
+  <li>https://docs.spring.io/spring-data/jpa/docs/current/reference/html/</li>
+  <li>https://martinfowler.com/eaaCatalog/repository.html</li>
+  <li>http://hanamirb.org/guides</li>
+  <li>https://12factor.net/config</li>
+  <li>http://api.rubyonrails.org/classes/ActionController/Helpers.html</li>
+  <li>http://hanamirb.org/guides/architecture/overview/</li>
+  <li>https://martinfowler.com/bliki/MonolithFirst.html</li>
+  <li>https://github.com/hanami/hanami</li>
+  <li>https://mkdev.me/en/posts/a-couple-of-words-about-interactors-in-rails</li>
+  <li>https://www.toptal.com/software/single-responsibility-principle</li>
+  <li>https://github.com/hanami/view</li>
+  <li>https://github.com/hanami/controller</li>
+  <li>https://blog.dnsimple.com/2017/03/why-we-ended-up-not-using-rails-for-our-new-json-api/</li>
+  <li>http://blog.steveklabnik.com/posts/2011-09-06-the-secret-to-rails-oo-design</li>
+</ul>
+
+:ET

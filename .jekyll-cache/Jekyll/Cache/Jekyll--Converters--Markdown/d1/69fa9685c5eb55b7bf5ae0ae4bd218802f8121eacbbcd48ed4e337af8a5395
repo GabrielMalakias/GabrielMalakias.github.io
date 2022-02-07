@@ -1,0 +1,316 @@
+I"U�<p>At this year I went to QCon São Paulo, I saw many cool things and many new technologies. At the conference, some speakers talked about how we can make resilient systems. Kolton Andrus (<a href="https://www.infoq.com/br/presentations/exercising-failure-at-netflix#downloadPdf">slides</a>) has spoken about of Netflix Toolset, he mentioned Spinnaker, Chaos Kong and Hystrix. I like so much of Hystrix, because the concept behind this mechanism sounds very simple and can be useful in many situations. In this post, I will try to talk about it.</p>
+
+<p>Oh, what is Hystrix? The Netflix describes Hystrix as “[…] a latency and fault tolerance library designed to isolate points of access to remote systems, services and 3rd party libraries, stop cascading failure and enable resilience in complex distributed systems where failure is inevitable.”. Behind all advantages that it gives to us, this library has a lot of patterns, however in this post I will write about only one, called of Circuit-Breaker.</p>
+
+<p>Let’s think about circuit-breaker. Let me see… Oh Circuit-Breaker pattern works like a home circuit-breaker, Obvious. But, how it works? You can see it <a href="http://electronics.howstuffworks.com/circuit-breaker2.htm">here</a>. In IT world, this mechanism can be applied to some cases to prevent errors or decrease latency. Imagine that you have a call to an external service, in this scenario many things can fail, you can get network error, some server can be out, or something unexpected can occurs. <strong>If you want to make your system resilient, you have to assume that your system can fail</strong>.</p>
+
+<p>To avoid that problem, you can respond a default response or with cache. Using a circuit-breaker, when something goes wrong N times, the circuit-breaker stops to call failing method and responds only with a fallback response. After a time period, the circuit-breaker try to call a method again, it can works or not.</p>
+
+<p>In this post, I will try to show some examples with the same app that I created at the previous post. You can download it <a href="https://github.com/GabrielMalakias/experiences/releases/tag/0.0.2">here</a>(please use version 0.0.2). I added Docker only to turn easier the environment setup, but you can use only ruby(&gt;=2.2) and rails(&gt;=5) to run.</p>
+
+<p>I will show only one the <a href="https://github.com/orgsync/stoplight">stoplight</a> gem, if you search at RubyToolbox site you can found many similar solutions like <a href="https://github.com/yammer/circuitbox">circuitbox</a> or <a href="https://github.com/jnunemaker/resilient">resilient</a>, through.</p>
+
+<p>Ok, how it works? Well, we will see it together along this post. So, it’s easier, at least for me, understand with examples.</p>
+
+<p><em>Ps: To run with docker you can use ‘docker-compose up’ and after that ‘docker exec -it &lt;image-name/id&gt; bash’ to enter in bash. In the end we have to type ‘rails c’.</em></p>
+
+<p>First of all, we have to add a new gem in this project, so the following line solves it.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">gem</span> <span class="s1">'stoplight'</span></code></pre></figure>
+
+<p><em>Ps: Everytime that we add a new gem in Gemfile, we need to run ‘docker-compose build’</em></p>
+
+<p>At the project folder, we need to type the command below to start our server.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby/blog  docker-compose up
+ Building web
+ Step 1 : FROM ruby:2.3.0
+ <span class="nt">---</span><span class="o">&gt;</span> 7ca70eb2dfea
+ Step 2 : RUN apt-get update <span class="nt">-qq</span> <span class="o">&amp;&amp;</span> apt-get <span class="nb">install</span> <span class="nt">-y</span> build-essential libpq-dev nodejs
+ <span class="nt">---</span><span class="o">&gt;</span> Using cache
+ <span class="nt">---</span><span class="o">&gt;</span> 9f5de80da16a
+...
+
+...
+ web_1                | <span class="k">*</span> Version 3.6.0 <span class="o">(</span>ruby 2.3.0-p0<span class="o">)</span>, codename: Sleepy Sunday Serenity
+ web_1                | <span class="k">*</span> Min threads: 5, max threads: 5
+ web_1                | <span class="k">*</span> Environment: development
+ web_1                | <span class="k">*</span> Listening on tcp://0.0.0.0:3000</code></pre></figure>
+
+<p>The command above build the image from Dockerfile, starts all dependencies that we added in docker-compose and executes a command specified in docker-compose (in our case ‘bundle exec puma’).</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">~/projects/ruby/blog  docker ps
+CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
+68f52b94aed6        blog_web            <span class="s2">"bash -c 'bundle exec"</span>   5 minutes ago       Up 3 minutes        0.0.0.0:3000-&gt;3000/tcp   blog_web_1
+7dfa02f6c2de        redis:3.0.7         <span class="s2">"docker-entrypoint.sh"</span>   8 minutes ago       Up 3 minutes        0.0.0.0:6379-&gt;6379/tcp   blog_experiences_redis_1</code></pre></figure>
+
+<p>After that, we have to enter in rails console, so type ‘docker exec -it <image_name> -it bash" and 'rails c'.</image_name></p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">~/projects/ruby/blog  docker <span class="nb">exec</span> <span class="nt">-it</span> blob_web_1 bash
+root@68f52b94aed6:/var/www/experiences# rails c
+Running via Spring preloader <span class="k">in </span>process 67
+Loading development environment <span class="o">(</span>Rails 5.0.0.1<span class="o">)</span></code></pre></figure>
+
+<p>The gem Stoplight is very illustrative, it works like a stoplight (Mr. Obvious attacks again! kkk). Please look at the diagram below.</p>
+
+<p><img src="http://localhost:4000/assets/images/stoplightdiagram.png" alt="stoplight" /></p>
+
+<p><em>Ps: I tried to extract the flux above from Stoplight code.</em></p>
+
+<p>Now, let’s play with this gem and, besides that we will try to use it inside our simple ‘blog’ code.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">root</span><span class="vi">@e0e62e64b3ec</span><span class="ss">:/</span><span class="n">var</span><span class="o">/</span><span class="n">www</span><span class="o">/</span><span class="n">experiences</span><span class="c1"># rails c</span>
+<span class="no">Running</span> <span class="n">via</span> <span class="no">Spring</span> <span class="n">preloader</span> <span class="k">in</span> <span class="n">process</span> <span class="mi">49</span>
+<span class="no">Loading</span> <span class="n">development</span> <span class="n">environment</span> <span class="p">(</span><span class="no">Rails</span> <span class="mf">5.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">001</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">function</span> <span class="o">=</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">"Hello World!"</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Proc:0x00560f121bc6b0@(irb):1 (lambda)&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">002</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span> <span class="o">=</span> <span class="no">Stoplight</span><span class="p">(</span><span class="s1">'example'</span><span class="p">)</span> <span class="p">{</span> <span class="n">function</span><span class="p">.</span><span class="nf">call</span> <span class="p">}</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Stoplight::Light:0x00560f1219a498 @name="example", @code=#&lt;Proc:0x00560f1219a4c0@(irb):2&gt;, @cool_off_time=60.0, @data_store=#&lt;Stoplight::DataStore::Memory:0x00560f118b6570 @failures=#&lt;Concurrent::Map:0x00560f118b6548 entries=0 default_proc=#&lt;Proc:0x00560f118b64f8@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/data_store/memory.rb:10&gt;&gt;, @states=#&lt;Concurrent::Map:0x00560f118b6480 entries=0 default_proc=#&lt;Proc:0x00560f118b6458@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/data_store/memory.rb:11&gt;&gt;, @lock=#&lt;Monitor:0x00560f118b63e0 @mon_owner=nil, @mon_count=0, @mon_mutex=#&lt;Thread::Mutex:0x00560f118b6390&gt;&gt;&gt;, @error_handler=#&lt;Proc:0x00560f118b6340@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:9 (lambda)&gt;, @error_notifier=#&lt;Proc:0x00560f118b6318@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:11 (lambda)&gt;, @fallback=nil, @notifiers=[#&lt;Stoplight::Notifier::IO:0x00560f118b62c8 @object=#&lt;IO:&lt;STDERR&gt;&gt;, @formatter=#&lt;Proc:0x00560f118b62f0@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:15 (lambda)&gt;&gt;], @threshold=3&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">003</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="no">Hello</span> <span class="no">World</span><span class="o">!</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">004</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="no">Hello</span> <span class="no">World</span><span class="o">!</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">005</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">color</span>
+<span class="o">=&gt;</span> <span class="s2">"green"</span></code></pre></figure>
+
+<p>The code above shows how Stoplight works, to create a light we must set an identifier, at this case ‘example’. We have to pass a code block that will be executed, in this case a lambda called ‘function’.</p>
+
+<p>When we have a light, we can run it and the result will be evaluated and also get the light color.</p>
+
+<p>Ok, if code works everytime when called this gem is unuseful, but if we have a code that can fail, we can use it to avoid some error scenarios. Let’s take a look when something goes wrong.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">010</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">function</span> <span class="o">=</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="no">Blargh</span><span class="p">.</span><span class="nf">new</span> <span class="p">}</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">011</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span> <span class="o">=</span> <span class="no">Stoplight</span><span class="p">(</span><span class="s1">'error'</span><span class="p">)</span> <span class="p">{</span> <span class="n">function</span><span class="p">.</span><span class="nf">call</span> <span class="p">}.</span><span class="nf">with_fallback</span><span class="p">{</span><span class="o">|</span><span class="n">error</span><span class="o">|</span> <span class="nb">puts</span> <span class="n">error</span><span class="p">;</span> <span class="nb">puts</span> <span class="s1">'Fallback'</span> <span class="p">}.</span><span class="nf">with_cool_off_time</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Stoplight::Light:0x00560f11ed41a0 @name="error", @code=#&lt;Proc:0x00560f11ed4240@(irb):11&gt;, @cool_off_time=3, @data_store=#&lt;Stoplight::DataStore::Memory:0x00560f118b6570 @failures=#&lt;Concurrent::Map:0x00560f118b6548 entries=1 default_proc=#&lt;Proc:0x00560f118b64f8@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/data_store/memory.rb:10&gt;&gt;, @states=#&lt;Concurrent::Map:0x00560f118b6480 entries=0 default_proc=#&lt;Proc:0x00560f118b6458@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/data_store/memory.rb:11&gt;&gt;, @lock=#&lt;Monitor:0x00560f118b63e0 @mon_owner=nil, @mon_count=0, @mon_mutex=#&lt;Thread::Mutex:0x00560f118b6390&gt;&gt;&gt;, @error_handler=#&lt;Proc:0x00560f118b6340@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:9 (lambda)&gt;, @error_notifier=#&lt;Proc:0x00560f118b6318@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:11 (lambda)&gt;, @fallback=#&lt;Proc:0x00560f11ed4178@(irb):11&gt;, @notifiers=[#&lt;Stoplight::Notifier::IO:0x00560f118b62c8 @object=#&lt;IO:&lt;STDERR&gt;&gt;, @formatter=#&lt;Proc:0x00560f118b62f0@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:15 (lambda)&gt;&gt;], @threshold=3&gt;</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">012</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="n">uninitialized</span> <span class="n">constant</span> <span class="no">Blargh</span>
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">013</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">014</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">015</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="n">uninitialized</span> <span class="n">constant</span> <span class="no">Blargh</span>
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">016</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">017</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">color</span>
+<span class="o">=&gt;</span> <span class="s2">"yellow"</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">01</span><span class="mi">8</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="n">uninitialized</span> <span class="n">constant</span> <span class="no">Blargh</span>
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">01</span><span class="mi">9</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">color</span>
+<span class="o">=&gt;</span> <span class="s2">"red"</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">020</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="nb">sleep</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="mi">3</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">021</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">color</span>
+<span class="o">=&gt;</span> <span class="s2">"yellow"</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">022</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">run</span>
+<span class="n">uninitialized</span> <span class="n">constant</span> <span class="no">Blargh</span>
+<span class="no">Fallback</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">023</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="n">light</span><span class="p">.</span><span class="nf">color</span>
+<span class="o">=&gt;</span> <span class="s2">"red"</span></code></pre></figure>
+
+<p>The code above is similar than previous one, we added a function that always fail(at least since we define Blargh class), we also added some customizations like ‘with_fallback’ and ‘with_cool_of_time’.</p>
+
+<p>The function ‘with_fallback’ defines a custom fallback, this code will be evaluated when something goes wrong.</p>
+
+<p>The function ‘with_cool_of_time’ defines a timer to turn to yellow and then the next call will define if light will be green or red again. Don’t be afraid with this, Stoplight has a nice documentation and you can see many examples at project <a href="https://github.com/orgsync/stoplight">page</a>.</p>
+
+<p>When we have a huge application with multiple instances this code don’t work well because Stoplight uses memory by default to store all light statuses. This gem already has a solution to it, we can use Redis to share lights statuses between the app instances. So, we have to create a file at config/initializers and add the following code into it.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby/blog <span class="nb">touch </span>config/initializers/stoplight.rb</code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="nb">require</span> <span class="s1">'stoplight'</span>
+<span class="nb">require</span> <span class="s1">'redis'</span>
+
+<span class="n">redis</span> <span class="o">=</span> <span class="no">Redis</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="ss">host: </span><span class="no">ENV</span><span class="p">[</span><span class="s2">"REDIS"</span><span class="p">])</span>
+
+<span class="no">Stoplight</span><span class="o">::</span><span class="no">Light</span><span class="p">.</span><span class="nf">default_data_store</span> <span class="o">=</span> <span class="no">Stoplight</span><span class="o">::</span><span class="no">DataStore</span><span class="o">::</span><span class="no">Redis</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">redis</span><span class="p">)</span></code></pre></figure>
+
+<p>Now, we will use Stoplight in article#show route to responds with a fallback when something goes wrong. So, we have to add the possibility to fail then a code that fail can be useful. We also have to create a command. You can use all code directly on Article.find, but I will use a command to keep same pattern.</p>
+
+<p>Create a file into lib/commands/article folder, this command will be responsible to search an article and to encapsulate a circuit breaker behavior. Add the following lines into created file.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">module</span> <span class="nn">Commands</span>
+  <span class="k">module</span> <span class="nn">Article</span>
+    <span class="k">class</span> <span class="nc">Find</span>
+      <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>After that, we need to register a new command inside a Blog::Container.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">class</span> <span class="nc">Blog::Container</span>
+  <span class="kp">extend</span> <span class="no">Dry</span><span class="o">::</span><span class="no">Container</span><span class="o">::</span><span class="no">Mixin</span>
+
+  <span class="n">register</span><span class="p">(</span><span class="s1">'commands.article.create'</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">Commands</span><span class="o">::</span><span class="no">Article</span><span class="o">::</span><span class="no">Create</span><span class="p">.</span><span class="nf">new</span>
+  <span class="k">end</span>
+
+  <span class="n">register</span><span class="p">(</span><span class="s1">'commands.article.find'</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">Commands</span><span class="o">::</span><span class="no">Article</span><span class="o">::</span><span class="no">Find</span><span class="p">.</span><span class="nf">new</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>And finally change the code responsible to find Article inside a ArticlesController to call our new Command.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">class</span> <span class="nc">ArticlesController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+  <span class="kp">include</span> <span class="no">AutoInject</span><span class="p">[</span><span class="ss">create_article: </span><span class="s1">'commands.article.create'</span><span class="p">,</span>
+                     <span class="ss">find_article: </span><span class="s1">'commands.article.find'</span><span class="p">]</span> <span class="c1">#Adds a new dependency</span>
+
+  <span class="o">...</span>
+
+  <span class="kp">private</span>
+    <span class="k">def</span> <span class="nf">set_article</span>
+      <span class="vi">@article</span> <span class="o">=</span> <span class="n">find_article</span><span class="o">.</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="ss">:id</span><span class="p">])</span> <span class="c1"># the . calls function #call inside a Commands::Article::Find</span>
+    <span class="k">end</span>
+  <span class="o">...</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Run ‘docker-compose up’ or ‘rails s’, create a article and see if everything works as expected.</p>
+
+<p>Now we are ready to add the stoplight inside our project. First of all, we have to add the fail possibility. We will use the following code to determine if it will fail or no.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">fail?</span>
+  <span class="no">Random</span><span class="p">.</span><span class="nf">rand</span> <span class="o">&lt;</span> <span class="mf">0.5</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>After that, we need to add to code responsible responds by fallback. In our case, when something goes wrong fallback will responds with a fake Article.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">fallback</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="ss">id: </span><span class="nb">id</span><span class="p">,</span> <span class="ss">name: </span><span class="s2">"Fallback"</span><span class="p">,</span> <span class="ss">description: </span><span class="s2">"Error happened Fallback response"</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>And add the code responsible to fail or search Article in database.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="k">raise</span> <span class="s1">'Something is wrong'</span> <span class="k">if</span> <span class="nb">fail</span><span class="p">?</span>
+  <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>When you search for a inexistent Article, the method #find will throw a error.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">irb</span><span class="p">(</span><span class="n">main</span><span class="p">):</span><span class="mo">001</span><span class="p">:</span><span class="mi">0</span><span class="o">&gt;</span> <span class="no">Article</span><span class="p">.</span><span class="nf">find</span> <span class="mi">239882</span>
+  <span class="no">Article</span> <span class="no">Load</span> <span class="p">(</span><span class="mf">0.3</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">"articles"</span><span class="o">.</span><span class="p">\</span><span class="o">*</span> <span class="no">FROM</span> <span class="s2">"articles"</span> <span class="no">WHERE</span> <span class="s2">"articles"</span><span class="o">.</span><span class="s2">"id"</span> <span class="o">=</span> <span class="p">?</span> <span class="no">LIMIT</span> <span class="p">?</span>  <span class="p">[[</span><span class="s2">"id"</span><span class="p">,</span> <span class="mi">239882</span><span class="p">],</span> <span class="p">[</span><span class="s2">"LIMIT"</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+  <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">RecordNotFound</span><span class="p">:</span> <span class="no">Couldn</span><span class="s1">'t find Article with '</span><span class="nb">id</span><span class="err">'</span><span class="o">=</span><span class="mi">239882</span></code></pre></figure>
+
+<p>But you don’t need to responds with a fallback in this case. To around this problem we have to add the code below.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">custom_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+  <span class="k">raise</span> <span class="n">error</span> <span class="k">if</span> <span class="n">error</span><span class="p">.</span><span class="nf">is_a?</span><span class="p">(</span><span class="no">ActiveRecord</span><span class="o">::</span><span class="no">RecordNotFound</span><span class="p">)</span>
+  <span class="n">handle</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>And finally the code to get together all things.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="no">Stoplight</span><span class="p">(</span><span class="s1">'article.find'</span><span class="p">)</span> <span class="k">do</span>
+    <span class="n">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">.</span><span class="nf">with_fallback</span> <span class="k">do</span> <span class="o">|</span><span class="n">error</span><span class="o">|</span>
+    <span class="n">fallback</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">.</span><span class="nf">with_error_handler</span> <span class="k">do</span> <span class="o">|</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="o">|</span>
+    <span class="n">custom_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+  <span class="k">end</span><span class="p">.</span><span class="nf">run</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>All code will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">module</span> <span class="nn">Commands</span>
+  <span class="k">module</span> <span class="nn">Article</span>
+    <span class="k">class</span> <span class="nc">Find</span>
+      <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="no">Stoplight</span><span class="p">(</span><span class="s1">'article.find'</span><span class="p">)</span> <span class="k">do</span>
+          <span class="n">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="k">end</span><span class="p">.</span><span class="nf">with_fallback</span> <span class="k">do</span> <span class="o">|</span><span class="n">error</span><span class="o">|</span>
+          <span class="n">fallback</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="k">end</span><span class="p">.</span><span class="nf">with_error_handler</span> <span class="k">do</span> <span class="o">|</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="o">|</span>
+          <span class="n">custom_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+        <span class="k">end</span><span class="p">.</span><span class="nf">run</span>
+      <span class="k">end</span>
+
+      <span class="kp">private</span>
+      <span class="k">def</span> <span class="nf">fail?</span>
+        <span class="no">Random</span><span class="p">.</span><span class="nf">rand</span> <span class="o">&lt;</span> <span class="mf">0.5</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">fallback</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="ss">id: </span><span class="nb">id</span><span class="p">,</span> <span class="ss">name: </span><span class="s2">"Fallback"</span><span class="p">,</span> <span class="ss">description: </span><span class="s2">"Error happened Fallback response"</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="s1">'Something is wrong'</span> <span class="k">if</span> <span class="nb">fail</span><span class="p">?</span>
+        <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">find</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">custom_error_handler</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">error</span> <span class="k">if</span> <span class="n">error</span><span class="p">.</span><span class="nf">is_a?</span><span class="p">(</span><span class="no">ActiveRecord</span><span class="o">::</span><span class="no">RecordNotFound</span><span class="p">)</span>
+        <span class="n">handle</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>Now, we can run our server again, and access a Article#show route. When you get a error the server will respond with a fallback, like the image below.</p>
+
+<p><img src="http://localhost:4000/assets/images/stoplightfallback.png" alt="stoplight" /></p>
+
+<p>If you check your log, you will see something like this:</p>
+
+<p><img src="http://localhost:4000/assets/images/stoplightlog.png" alt="stoplight" /></p>
+
+<p>We can add a custom notifier to something that you want when light changes the status from red to green or vice versa.</p>
+
+<p>Bonus: We can add a custom notifier in our project, so take a look at the following example:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">touch</span> <span class="n">lib</span><span class="o">/</span><span class="n">notifiers</span><span class="o">/</span><span class="n">custom</span><span class="p">.</span><span class="nf">rb</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">module</span> <span class="nn">Notifiers</span>
+  <span class="k">class</span> <span class="nc">Custom</span> <span class="o">&lt;</span> <span class="no">Stoplight</span><span class="o">::</span><span class="no">Notifier</span><span class="o">::</span><span class="no">Base</span>
+    <span class="k">def</span> <span class="nf">notify</span><span class="p">(</span><span class="n">light</span><span class="p">,</span> <span class="n">from_color</span><span class="p">,</span> <span class="n">to_color</span><span class="p">,</span> <span class="n">error</span><span class="p">)</span>
+      <span class="nb">puts</span><span class="p">(</span><span class="s2">"[Custom] - Light: </span><span class="si">#{</span><span class="n">light</span><span class="p">.</span><span class="nf">inspect</span><span class="si">}</span><span class="s2"> - From color: </span><span class="si">#{</span><span class="n">from_color</span><span class="si">}</span><span class="s2"> - To color </span><span class="si">#{</span><span class="n">to_color</span><span class="si">}</span><span class="s2"> - </span><span class="si">#{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>We only need to keep the same method signature of notify and add the custom notifier in stoplight configuration. To configure stoplight, we need to add the line below inside config/initializers/stoplight.rb.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="no">Stoplight</span><span class="o">::</span><span class="no">Light</span><span class="p">.</span><span class="nf">default_notifiers</span> <span class="o">+=</span> <span class="no">Array</span><span class="p">(</span><span class="no">Notifiers</span><span class="o">::</span><span class="no">Custom</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span></code></pre></figure>
+
+<p>When we call the route again until an error occurs. The log will look like this:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">web_1</span>                <span class="o">|</span> <span class="no">Switching</span> <span class="n">article</span><span class="p">.</span><span class="nf">find</span> <span class="n">from</span> <span class="n">green</span> <span class="n">to</span> <span class="n">red</span> <span class="n">because</span> <span class="no">RuntimeError</span> <span class="no">Something</span> <span class="n">is</span> <span class="n">going</span> <span class="n">wrong</span>
+<span class="n">web_1</span>                <span class="o">|</span> <span class="p">[</span><span class="no">Custom</span><span class="p">]</span> <span class="o">-</span> <span class="no">Light</span><span class="p">:</span> <span class="c1">#&lt;Stoplight::Light:0x0056395bbf8368 @name="article.find", @code=#&lt;Proc:0x0056395bbf84f8@/var/www/experiences/lib/commands/article/find.rb:5&gt;, @cool_off_time=60.0, @data_store=#&lt;Stoplight::DataStore::Redis:0x0056395be41de0 @redis=#&lt;Redis client v3.3.2 for redis://redis_experiences:6379/0&gt;&gt;, @error_handler=#&lt;Proc:0x0056395bbf8278@/var/www/experiences/lib/commands/article/find.rb:9&gt;, @error_notifier=#&lt;Proc:0x0056395b7d8e18@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:11 (lambda)&gt;, @fallback=#&lt;Proc:0x0056395bbf82f0@/var/www/experiences/lib/commands/article/find.rb:7&gt;, @notifiers=[#&lt;Stoplight::Notifier::IO:0x0056395b7d8dc8 @object=#&lt;IO:&lt;STDERR&gt;&gt;, @formatter=#&lt;Proc:0x0056395b7d8df0@/usr/local/bundle/gems/stoplight-2.1.0/lib/stoplight/default.rb:15 (lambda)&gt;&gt;, #&lt;Notifiers::Custom:0x0056395be297e0&gt;], @threshold=3&gt; - From color: green - To color red - Something is going wrong</span></code></pre></figure>
+
+<p>Stoplight has a panel to displays all light statuses and to do some actions like lock light status. If you are interested in it, please take a look at the project <a href="https://github.com/orgsync/stoplight-admin">page</a>.</p>
+
+<p>You can download all code showed from <a href="https://github.com/GabrielMalakias/experiences/releases/tag/0.0.3">here</a>. That’s all. If you have any doubt please post it in commentaries section.</p>
+
+<p>Thanks!</p>
+
+<h4 id="references">References</h4>
+<ul>
+  <li>https://github.com/Netflix/Hystrix</li>
+  <li>http://electronics.howstuffworks.com/circuit-breaker2.htm</li>
+  <li>https://github.com/orgsync/stoplight</li>
+  <li>https://github.com/jnunemaker/resilient</li>
+  <li>https://github.com/yammer/circuitbox</li>
+  <li>https://www.infoq.com/br/presentations/exercising-failure-at-netflix#downloadPdf</li>
+</ul>
+
+:ET

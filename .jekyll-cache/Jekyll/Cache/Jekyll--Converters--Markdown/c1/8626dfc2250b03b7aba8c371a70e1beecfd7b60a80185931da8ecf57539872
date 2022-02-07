@@ -1,0 +1,312 @@
+I"�p<p>Hello, Today I’d like to talk about how I’m using Websockets in Hanami. Well, when I was starting I added the following line inside my application.rb but after that I was worried about it.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">security</span><span class="p">.</span><span class="nf">content_security_policy</span> <span class="sx">%{
+  connect-src: ws: 'self';
+}</span>
+</code></pre></div></div>
+<p>I was using PahoJS to connect to MQTT directly, but I think it isn’t a good option because credentials can be exposed. And, above all I have to control who is receiving and sending data through MQTT in future.</p>
+
+<p>I started to search on the Internet a good option when suddenly I saw this page:</p>
+
+<p><img src="http://localhost:4000/assets/images/anycable_demo.png" alt="anycable demo" /></p>
+
+<p>That sounds good, then why not?!</p>
+
+<h3 id="how-it-works">How it works</h3>
+
+<p>Vladimir Dementyev(<a href="https://twitter.com/palkan_tula">@palkan_tula</a>) recently wrote a post about it, From his point of view Ruby and Rails aren’t the best option for websockets based his experience and benchmarks, a decision has been made then they (Anycable.io) decided to extract the WebSocket responsability to another language, in this case, the language selected was Go.
+Anycable-Go deals with the websocket management and many other things without know of any business logic.</p>
+
+<p>To deal with this layer, we need to create our classes to manage our rules, however how does AnyCable WebSocket(Go) connect to a Ruby Application?</p>
+
+<p>They solved this problem using a gRPC client connected to another ruby process like the following picture.</p>
+
+<p><img src="http://localhost:4000/assets/images/anycable_architecture.png" alt="anycable demo" /></p>
+
+<ul>
+  <li><em>Extracted from: https://evilmartians.com/chronicles/anycable-actioncable-on-steroids</em></li>
+</ul>
+
+<p>Well, They explain all pieces in this <a href="https://evilmartians.com/chronicles/anycable-actioncable-on-steroids">post</a>, it’s very interesting, please check it out.</p>
+
+<p>I chose Hanami as Framework, I was looking for anyone that already made the connection between Hanami and Anycable but I didn’t find anything. That’s is reason why I decided to do it by myself and I will share my experience along this post. Fortunately, Anycable already has a example using Sinatra, I basically followed these steps changing some pieces, let’s start!</p>
+
+<h3 id="adding-pieces-to-setup">Adding pieces to setup</h3>
+
+<p>Firstly, we need a script to start our RPC server. I used the following code to start the Anycable RPC server and load all Hanami dependencies.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nb">require</span> <span class="s2">"rack"</span>
+<span class="nb">require</span> <span class="s2">"anycable"</span>
+<span class="nb">require</span> <span class="s2">"litecable"</span>
+<span class="nb">require_relative</span> <span class="s1">'./config/boot'</span>
+
+<span class="no">LiteCable</span><span class="p">.</span><span class="nf">anycable!</span>
+
+<span class="no">Anycable</span><span class="p">.</span><span class="nf">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+  <span class="n">config</span><span class="p">.</span><span class="nf">connection_factory</span> <span class="o">=</span> <span class="no">Usgard</span><span class="o">::</span><span class="no">Ws</span><span class="o">::</span><span class="no">Connection</span>
+<span class="k">end</span>
+
+<span class="no">Anycable</span><span class="o">::</span><span class="no">Server</span><span class="p">.</span><span class="nf">start</span>
+</code></pre></div></div>
+<p>This server is a rack application then rack is required to run it, and also the ‘config/boot.rb’, which will load all Hanami components using ‘Hanami.boot’. After that the line ‘LiteCable.anycable!’ will enable the anycable compatibility mode. We must configure the class responsible to handle the connections, in this case ‘Usgard::Ws::Connection’. In the end, the server is started, then ‘Anycable::Server.start’ do it.</p>
+
+<p>In <a href="https://github.com/palkan/litecable/tree/master/examples/sinatra">sinatra example</a> they’ve shown how start anycable-go and the RPC server using hivemind to start all processes. I use docker-compose, then I added the following lines to my compose file.</p>
+
+<div class="language-yml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">services</span><span class="pi">:</span>
+  <span class="c1">#More stuff here</span>
+  <span class="na">rpc</span><span class="pi">:</span>
+    <span class="na">build</span><span class="pi">:</span> <span class="s">.</span>
+    <span class="na">command</span><span class="pi">:</span> <span class="s">bundle exec ruby anycable</span>
+    <span class="na">volumes</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">.:/usgard</span>
+    <span class="na">env_file</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">.env.development</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">ANYCABLE_REDIS_URL=redis://redis:6379/0</span>
+      <span class="pi">-</span> <span class="s">ANYCABLE_RPC_HOST=0.0.0.0:50051</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">redis</span>
+      <span class="pi">-</span> <span class="s">db</span>
+  <span class="na">anycable</span><span class="pi">:</span>
+    <span class="na">image</span><span class="pi">:</span> <span class="s1">'</span><span class="s">anycable/anycable-go:0.3'</span>
+    <span class="na">ports</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s2">"</span><span class="s">8080:8080"</span>
+    <span class="na">environment</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">ADDR=0.0.0.0:8080</span>
+      <span class="pi">-</span> <span class="s">REDIS=redis://redis:6379/0</span>
+      <span class="pi">-</span> <span class="s">RPC=rpc:50051</span>
+    <span class="na">depends_on</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">redis</span>
+      <span class="pi">-</span> <span class="s">rpc</span>
+</code></pre></div></div>
+<ul>
+  <li><em>Ps:. You can check this file <a href="https://github.com/GabrielMalakias/usgard/blob/anycable_integration/docker-compose.yml">here</a></em></li>
+</ul>
+
+<p>RPC server starts running ‘bundle exec ruby anycable’ and the Anycable-Go image will start automatically, Some environment variables are required, though. Anycable uses Redis to manage the connections and broadcasts.</p>
+
+<p><em>Ps:. The variable ‘DATABASE_URL’ must contains the connection string when ‘Hanami.boot’ is executed!</em></p>
+
+<p>Now, the basic infrastructure is prepared to handle all websocket connections. Finally we can start to add the business logic.</p>
+
+<h3 id="creating-channels-and-connections">Creating Channels and Connections</h3>
+
+<p>LiteCable is a ActionCable implementation, I think Rails defines whole concepts behind it very well. The paragraph below has been extracted from Rails doc.</p>
+
+<p><em>For every WebSocket accepted by the server, a connection object is instantiated. […] The connection itself does not deal with any specific application logic beyond authentication and authorization.</em> - <a href="http://guides.rubyonrails.org/action_cable_overview.html">Rails ActionCable Overview</a></p>
+
+<p>So, we need to create a connection class to deal with this layer.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="nn">Usgard</span>
+  <span class="k">module</span> <span class="nn">Ws</span>
+    <span class="k">class</span> <span class="nc">Connection</span> <span class="o">&lt;</span> <span class="no">LiteCable</span><span class="o">::</span><span class="no">Connection</span><span class="o">::</span><span class="no">Base</span>
+      <span class="n">identified_by</span> <span class="ss">:user</span><span class="p">,</span> <span class="ss">:sid</span>
+
+      <span class="k">def</span> <span class="nf">connect</span>
+        <span class="c1">#Ps:. I don't have authentication in this project, yet.</span>
+        <span class="vi">@user</span> <span class="o">=</span> <span class="s1">'usgard'</span> <span class="c1">#cookies["user"]</span>
+        <span class="vi">@sid</span> <span class="o">=</span> <span class="n">request</span><span class="p">.</span><span class="nf">params</span><span class="p">[</span><span class="s2">"sid"</span><span class="p">]</span>
+        <span class="n">reject_unauthorized_connection</span> <span class="k">unless</span> <span class="vi">@user</span>
+        <span class="no">Hanami</span><span class="o">::</span><span class="no">Logger</span><span class="p">.</span><span class="nf">new</span><span class="p">.</span><span class="nf">info</span> <span class="s2">"</span><span class="si">#{</span><span class="vi">@user</span><span class="si">}</span><span class="s2"> connected"</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">disconnect</span>
+        <span class="no">Hanami</span><span class="o">::</span><span class="no">Logger</span><span class="p">.</span><span class="nf">new</span><span class="p">.</span><span class="nf">info</span> <span class="s2">"</span><span class="si">#{</span><span class="vi">@user</span><span class="si">}</span><span class="s2"> disconnected"</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+
+<p>Rails defines channels as <strong><em>“a logical unit of work, similar to what a controller does in a regular MVC setup.”</em></strong> So, a Channel class is required, I used the following class for my actuators.</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">module</span> <span class="nn">Usgard</span>
+  <span class="k">module</span> <span class="nn">Ws</span>
+    <span class="k">class</span> <span class="nc">Channel::Actuator</span> <span class="o">&lt;</span> <span class="no">Usgard</span><span class="o">::</span><span class="no">Ws</span><span class="o">::</span><span class="no">Channel</span>
+      <span class="n">identifier</span> <span class="ss">:actuator</span>
+
+      <span class="k">def</span> <span class="nf">subscribed</span>
+        <span class="n">reject</span> <span class="k">unless</span> <span class="n">actuator_id</span>
+        <span class="n">stream_from</span> <span class="s2">"actuator_</span><span class="si">#{</span><span class="n">actuator_id</span><span class="si">}</span><span class="s2">"</span>
+      <span class="k">end</span>
+
+      <span class="k">def</span> <span class="nf">speak</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="no">Hanami</span><span class="o">::</span><span class="no">Logger</span><span class="p">.</span><span class="nf">new</span><span class="p">.</span><span class="nf">info</span> <span class="s2">"</span><span class="si">#{</span><span class="vi">@user</span><span class="si">}</span><span class="s2"> connected"</span>
+        <span class="no">LiteCable</span><span class="p">.</span><span class="nf">broadcast</span> <span class="s2">"actuator_</span><span class="si">#{</span><span class="n">actuator_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="ss">user: </span><span class="n">user</span><span class="p">,</span> <span class="ss">message: </span><span class="n">data</span><span class="p">[</span><span class="s2">"message"</span><span class="p">],</span> <span class="ss">sid: </span><span class="n">sid</span>
+      <span class="k">end</span>
+
+      <span class="kp">private</span>
+
+      <span class="k">def</span> <span class="nf">actuator_id</span>
+        <span class="vi">@actuator_id</span> <span class="o">||=</span> <span class="n">params</span><span class="p">.</span><span class="nf">fetch</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+</code></pre></div></div>
+<p>We already have all backend structure, besides we have to build the consumers at frontend.</p>
+
+<h3 id="consuming-websockets">Consuming websockets</h3>
+<p>Well, In Anycable <a href="https://github.com/anycable/anycable">page</a> they mention:</p>
+
+<p><em>“AnyCable uses ActionCable protocol, so you can use ActionCable JavaScript client without any monkey-patching.”</em> - <a href="https://github.com/anycable/anycable">Anycable</a></p>
+
+<p>I used the same JS of Rails, this JS is available <a href="https://www.npmjs.com/package/actioncable">here</a>, and it handles the communication and keeps the websocket connection alive:</p>
+
+<p>We can create our JS abstraction, but not now. I would rather use the cable.js, then I downloaded the JS and added to my application.html.slim</p>
+
+<div class="language-ruby highlighter-rouge"><div class="highlight"><pre class="highlight"><code>  <span class="o">==</span> <span class="n">javascript</span> <span class="s1">'cable'</span>
+  <span class="o">==</span> <span class="n">javascript</span> <span class="s1">'channel'</span>
+</code></pre></div></div>
+
+<p>But, wait a moment, What’s that channel.js? This JS is responsible to create the channel, I’m using the <a href="https://addyosmani.com/resources/essentialjsdesignpatterns/book/#revealingmodulepatternjavascript">Revealing Module pattern</a> on my JS, from my point of view it’s a good JS pattern and I guess it can be changed easily later.</p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">App</span><span class="p">.</span><span class="nx">channel</span> <span class="o">=</span> <span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">function</span> <span class="nx">init</span><span class="p">(</span><span class="nx">configuration</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">configureCable</span><span class="p">(</span><span class="nx">configuration</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// configure and create cable using identifier and functions</span>
+  <span class="kd">function</span> <span class="nx">configureCable</span><span class="p">(</span><span class="nx">configuration</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">createCable</span><span class="p">().</span><span class="nx">subscriptions</span>
+             <span class="p">.</span><span class="nx">create</span><span class="p">(</span><span class="nx">configuration</span><span class="p">.</span><span class="nx">identifiers</span><span class="p">,</span>
+                     <span class="nx">configuration</span><span class="p">.</span><span class="nx">functions</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">createCable</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">ActionCable</span>
+             <span class="p">.</span><span class="nx">createConsumer</span><span class="p">(</span><span class="dl">'</span><span class="s1">ws://localhost:8080/cable</span><span class="dl">'</span>
+                             <span class="o">+</span> <span class="dl">'</span><span class="s1">?sid=</span><span class="dl">'</span> <span class="o">+</span> <span class="nx">socketId</span><span class="p">());</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Unique identifier for a connection</span>
+  <span class="kd">function</span> <span class="nx">socketId</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nb">Date</span><span class="p">.</span><span class="nx">now</span> <span class="o">+</span> <span class="nx">generateRandomNumber</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">generateRandomNumber</span><span class="p">()</span> <span class="p">{...}</span>
+
+  <span class="k">return</span> <span class="p">{</span>
+    <span class="na">init</span><span class="p">:</span> <span class="nx">init</span>
+  <span class="p">}</span>
+<span class="p">}());</span>
+</code></pre></div></div>
+
+<p>After that we have to create the JS deal with the incomming messages and send them to the WebSocket. I used the following code. I wanna build something like a terminal, which one I have to send messages to actuators channel and receive it.</p>
+
+<p><em>PS:. I omitted some javascript of examples to turn easier to understand, however this code is available <a href="https://github.com/GabrielMalakias/usgard/tree/master/apps/web/assets/javascripts">here</a></em></p>
+
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nx">App</span><span class="p">.</span><span class="nx">sensor</span> <span class="o">=</span> <span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+  <span class="kd">var</span> <span class="nx">config</span> <span class="o">=</span> <span class="p">{</span> <span class="na">container</span><span class="p">:</span> <span class="dl">"</span><span class="s2">display_box</span><span class="dl">"</span><span class="p">,</span> <span class="na">channel</span><span class="p">:</span> <span class="dl">"</span><span class="s2">actuator</span><span class="dl">"</span><span class="p">,</span>
+  <span class="na">user</span><span class="p">:</span> <span class="dl">"</span><span class="s2">usgard</span><span class="dl">"</span><span class="p">,</span> <span class="na">socket</span><span class="p">:</span> <span class="kc">null</span> <span class="p">};</span>
+
+  <span class="kd">function</span> <span class="nx">init</span><span class="p">(</span><span class="nx">configuration</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">config</span> <span class="o">=</span>  <span class="nb">Object</span><span class="p">.</span><span class="nx">assign</span><span class="p">({},</span> <span class="nx">config</span><span class="p">,</span> <span class="nx">configuration</span><span class="p">);</span>
+
+    <span class="nx">config</span><span class="p">.</span><span class="nx">socket</span> <span class="o">=</span> <span class="nx">App</span><span class="p">.</span><span class="nx">channel</span>
+                       <span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="na">identifiers</span><span class="p">:</span> <span class="nx">identifier</span><span class="p">(),</span>
+                              <span class="na">functions</span><span class="p">:</span> <span class="nx">subscriptionFunctions</span><span class="p">()});</span>
+
+    <span class="nx">addListeners</span><span class="p">();</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">identifier</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">{</span>
+      <span class="na">channel</span><span class="p">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">channel</span><span class="p">,</span> <span class="na">id</span><span class="p">:</span> <span class="nx">config</span><span class="p">.</span><span class="nx">identifier</span>
+    <span class="p">};</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">subscriptionFunctions</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="p">{</span> <span class="na">connected</span><span class="p">:</span> <span class="nx">onConnected</span><span class="p">,</span> <span class="na">disconnected</span><span class="p">:</span>  <span class="nx">onDisconnected</span><span class="p">,</span>
+             <span class="na">received</span><span class="p">:</span> <span class="nx">onReceive</span> <span class="p">}</span>
+  <span class="p">}</span>
+
+  <span class="c1">// These functions will be evaluated when cable trigger the subscriptions</span>
+  <span class="kd">function</span> <span class="nx">onDisconnected</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">appendMessageToBox</span><span class="p">({</span> <span class="na">user</span><span class="p">:</span> <span class="dl">'</span><span class="s1">system</span><span class="dl">'</span><span class="p">,</span> <span class="na">message</span><span class="p">:</span> <span class="dl">"</span><span class="s2">Connection Lost</span><span class="dl">"</span> <span class="p">});</span>
+  <span class="p">}</span>
+
+  <span class="kd">function</span> <span class="nx">onReceive</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">appendMessageToBox</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Similar to onReceive function</span>
+  <span class="kd">function</span> <span class="nx">onConnected</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// { ... }</span>
+  <span class="p">}</span>
+
+  <span class="c1">// This function will handle the message when enter is typed</span>
+  <span class="kd">function</span> <span class="nx">addListeners</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="nx">getConsoleInput</span><span class="p">().</span><span class="nx">addEventListener</span><span class="p">(</span><span class="dl">"</span><span class="s2">keydown</span><span class="dl">"</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">which</span> <span class="o">==</span> <span class="mi">13</span> <span class="o">||</span> <span class="nx">event</span><span class="p">.</span><span class="nx">keyCode</span> <span class="o">==</span> <span class="mi">13</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">onEnter</span><span class="p">();</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="p">;</span>
+      <span class="p">}</span>
+      <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Sends to ActuatorChannel</span>
+  <span class="kd">function</span> <span class="nx">onEnter</span><span class="p">()</span> <span class="p">{</span>
+    <span class="nx">config</span><span class="p">.</span><span class="nx">socket</span><span class="p">.</span><span class="nx">perform</span><span class="p">(</span><span class="dl">'</span><span class="s1">speak</span><span class="dl">'</span><span class="p">,</span>
+                          <span class="p">{</span> <span class="na">message</span><span class="p">:</span> <span class="nx">getMessageFromConsoleInput</span><span class="p">()</span> <span class="p">});</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Create HTML elements</span>
+  <span class="kd">function</span> <span class="nx">getMessageFromConsoleInput</span><span class="p">()</span> <span class="p">{</span>
+    <span class="c1">// { ... }</span>
+  <span class="p">}</span>
+
+  <span class="c1">// Some other functions { ... }</span>
+
+  <span class="k">return</span> <span class="p">{</span>
+    <span class="na">init</span><span class="p">:</span> <span class="nx">init</span>
+  <span class="p">}</span>
+<span class="p">}());</span>
+</code></pre></div></div>
+
+<p>In the end, we have the HTML - in this case I used slim. So, here it is.</p>
+
+<div class="language-slim highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="nt">div</span>
+  <span class="nt">h1</span><span class="w"> </span><span class="si">#{</span><span class="n">actuator</span><span class="p">.</span><span class="nf">name</span><span class="si">}</span>
+
+  <span class="nt">p</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">'actuatorid'</span><span class="w"> </span><span class="na">style</span><span class="p">=</span><span class="s">'display: none'</span><span class="w"> </span><span class="si">#{</span><span class="n">actuator</span><span class="p">.</span><span class="nf">id</span><span class="si">}</span>
+
+  <span class="nt">dl</span><span class="nc">.dl-horizontal</span>
+    <span class="nt">dt</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">'mqtt_topic'</span><span class="w"> </span><span class="si">#{</span><span class="n">actuator</span><span class="p">.</span><span class="nf">mqtt_topic</span><span class="si">}</span>
+    <span class="nt">dd</span><span class="w"> </span><span class="si">#{</span><span class="n">actuator</span><span class="p">.</span><span class="nf">description</span><span class="si">}</span>
+
+  <span class="nt">div</span><span class="nc">.col-md-7</span>
+    <span class="nt">label</span><span class="w"> </span>Message
+  <span class="nt">div</span><span class="nc">.col-md-5</span>
+    <span class="nt">div</span><span class="nc">.display_box</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">'display_box'</span>
+    <span class="nt">div</span><span class="nc">.col-xs-offset-0.form-group</span>
+      <span class="nt">input</span><span class="nc">.form-control</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">'console'</span><span class="w"> </span><span class="na">type</span><span class="p">=</span><span class="s">"text"</span><span class="w"> </span><span class="na">name</span><span class="p">=</span><span class="s">"msg"</span>
+
+  <span class="nt">div</span><span class="nc">.row</span>
+    <span class="nt">button</span><span class="nc">.btn.btn-secondary</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">"status"</span><span class="w"> </span>Status
+    <span class="nt">button</span><span class="nc">.btn.btn-danger</span><span class="w"> </span><span class="na">id</span><span class="p">=</span><span class="s">"delete"</span><span class="w"> </span><span class="na">Destroy</span><span class="w">
+
+  </span><span class="p">=</span><span class="err">=</span><span class="w"> </span><span class="n">javascript</span><span class="w"> </span>'actuator'
+
+  <span class="nd">javascript:
+</span>    <span class="nx">App</span><span class="p">.</span><span class="nx">sensor</span><span class="p">.</span><span class="nx">init</span><span class="p">({</span><span class="na">identifier</span><span class="p">:</span> <span class="dl">"</span><span class="s2">#</span><span class="dl">"</span><span class="p">});</span>
+</code></pre></div></div>
+
+<p>And it works! All changes that I’ve been made can be found in this <a href="https://github.com/GabrielMalakias/usgard/pull/2">pull request</a> and also the Repository is available, please feel free to check it <a href="https://github.com/GabrielMalakias/usgard">here</a>.</p>
+
+<p><img src="http://localhost:4000/assets/images/hanami-anycable-works.gif" alt="anycable demo" /></p>
+
+<p>Well, Do you like this post? Please feel leave your comments and share it with your friends, Thanks!</p>
+
+<h3 id="references">References</h3>
+
+<ul>
+  <li>http://anycable.io</li>
+  <li>https://evilmartians.com/chronicles/anycable-actioncable-on-steroids</li>
+  <li>http://guides.rubyonrails.org/action_cable_overview.html</li>
+  <li>https://addyosmani.com/resources/essentialjsdesignpatterns/book/#revealingmodulepatternjavascript</li>
+  <li>https://github.com/palkan/litecable/tree/master/examples/sinatra</li>
+</ul>
+
+:ET

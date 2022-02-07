@@ -1,0 +1,239 @@
+I"Ii<p>Around of 2 or 3 months ago, I saw dry-rb at the first time, I thought: “Oh, that’s awesome, I have to experiment”. Today is the day! If you are thinking: “Oh, sorry what is Dry-rb?”. I will explain… Well, Dry-rb is a bunch of tools to simplify and help us to make some code improvements.</p>
+
+<p>Today in this post, I’m going to show how we can use dry-auto_inject with rails. First, There is a simple question, what is dry-auto_inject? According with dry-rb.org, it’s a “Container-agnostic constructor injection mixin”, if you already programmed in languages like Java (Spring @Autowired, says: ‘Hello’), C#, or some language or framework with dependency-injection support you saw the amazing ‘magic’ of Dependency Injection(DI).</p>
+
+<p>If you are thinking: “Oh, my Gosh but I never saw nothing about dependency injection in my life”. Relax, I didn’t forget you. The Internet has a lot of materials about dependency injection. If you read something about SOLID, you already saw this concept. The D in SOLID, represents “Dependency inversion principle”, this principle can be made with an creational pattern, a factory method or a DEPENDENCY INJECTION framework, take a look below.</p>
+
+<p><img src="http://localhost:4000/assets/images/dependency_injection.png" alt="dependency-injection" /></p>
+
+<ul>
+  <li><em>Extracted from: https://dzone.com/articles/dependency-injection-0</em></li>
+</ul>
+
+<p>I won’t explain all details behind this concept, because many people made it as you see below:</p>
+
+<ul>
+  <li><a href="http://solnic.eu/2013/12/17/the-world-needs-another-post-about-dependency-injection-in-ruby.html">solnic</a>;</li>
+  <li><a href="http://www.martinfowler.com/articles/injection.html">martin-fowler</a>.</li>
+</ul>
+
+<p>If you saw something like the code below, you already had a possibility to use Dry-Auto_Inject:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">class</span> <span class="nc">CreateArticle</span>
+  <span class="k">def</span> <span class="nf">initialize</span><span class="p">(</span><span class="n">repository</span> <span class="o">=</span> <span class="no">ArticleRepository</span><span class="p">.</span><span class="nf">new</span><span class="p">)</span>
+    <span class="nb">self</span><span class="p">.</span><span class="nf">repository</span> <span class="o">=</span> <span class="n">repository</span>
+  <span class="k">end</span>
+
+  <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">article</span><span class="p">)</span>
+    <span class="n">repository</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">article</span><span class="p">)</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>In this case the class CreateArticle receives a external dependency and calls the repository method(#call). The class CreateArticle believes that ArticleRepository implements a method #call, it doesn’t have any details about repository. If you have some tool to inject the dependency automatically, this code can be more uncoupled and the responsability to know where was implemented, can be delegated to another part of code.</p>
+
+<h4 id="starting">Starting</h4>
+
+<p>We have to install the development environment. We will use current stable rails version 5.0.0.1 and ruby 2.3.0. If you don’t have Ruby and Rails installed, check how install in <a href="https://rvm.io/rvm/install">RVM</a> or <a href="https://github.com/rbenv/rbenv">Rbenv</a> sites, it’s very simple ;).</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby  ruby <span class="nt">-v</span>
+ruby 2.3.1p112 <span class="o">(</span>2016-04-26 revision 54768<span class="o">)</span> <span class="o">[</span>x86_64-linux]
+
+~/projects/ruby  rails <span class="nt">-v</span>
+Rails 5.0.0.1</code></pre></figure>
+
+<p>After that, we can start! To put it into action, we need a Rails application. To create a new App, type the command below. If you already has a Rails app, you can ignore this step.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">~/projects/ruby  rails new blog
+create
+create  README.md
+create  Rakefile
+create  config.ru
+create  .gitignore
+create  Gemfile
+create  app
+...</code></pre></figure>
+
+<p>After create app, we need to install dry-auto_inject. To install, add this line in your Gemfile.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="n">gem</span> <span class="s1">'dry-auto_inject'</span></code></pre></figure>
+
+<p>And run</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">bundle <span class="nb">install</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">/projects/ruby/blog  bundle list | <span class="nb">grep </span>dry
+  <span class="k">*</span> dry-auto_inject <span class="o">(</span>0.4.1<span class="o">)</span>
+  <span class="k">*</span> dry-configurable <span class="o">(</span>0.1.7<span class="o">)</span>
+  <span class="k">*</span> dry-container <span class="o">(</span>0.5.0<span class="o">)</span></code></pre></figure>
+
+<p>Dry-auto_inject depends of dry-configurable and dry-container. The dry-configurable is “a simple mixin to add thread-safe configuration behaviour to your classes”, you can check <a href="http://dry-rb.org/gems/dry-configurable">here</a>. The dry-container is the core of auto-injection mechanism.</p>
+
+<p>Let’s see how it works.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">~/projects/ruby/blog  bundle <span class="nb">exec </span>rails c
+Running via Spring preloader <span class="k">in </span>process 5167
+Loading development environment <span class="o">(</span>Rails 5.0.0.1<span class="o">)</span>
+2.3.1 :001 <span class="o">&gt;</span></code></pre></figure>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">002</span> <span class="o">&gt;</span> <span class="n">container</span> <span class="o">=</span> <span class="no">Dry</span><span class="o">::</span><span class="no">Container</span><span class="p">.</span><span class="nf">new</span>
+ <span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x000000038bb200 @_container={}&gt;</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">003</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">register</span><span class="p">(</span><span class="ss">:article_repository</span><span class="p">)</span> <span class="p">{</span> <span class="no">Class</span><span class="p">.</span><span class="nf">new</span> <span class="p">}</span>
+  <span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x000000038bb200 @_container={"article_repository"=&gt;#&lt;Dry::Container::Item:0x000000034d0640 @item=#&lt;Proc:0x000000034d06e0@(irb):43&gt;, @options={:call=&gt;true}&gt;}&gt;</span></code></pre></figure>
+
+<p>When someone call Dry::Container#register with the identifier(:article_repository), the dependency is stored inside a proc. After that, when someone call Dry::Container#resolve with identifier(:article_repository) the proc stored previosly is executed or returned. The code inside proc can be executed immediately when resolve the reference or no, let’s see how it works with the code below.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">001</span> <span class="o">&gt;</span> <span class="n">container</span> <span class="o">=</span> <span class="no">Dry</span><span class="o">::</span><span class="no">Container</span><span class="p">.</span><span class="nf">new</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x000000042db460 @_container={}&gt;</span>
+<span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">002</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">register</span><span class="p">(</span><span class="ss">:lazy_hello</span><span class="p">,</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">"Hello Lazy"</span> <span class="p">},</span> <span class="ss">call: </span><span class="kp">false</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x000000042db460 @_container={"lazy_hello"=&gt;#&lt;Dry::Container::Item:0x00000004342a98 @item=#&lt;Proc:0x000000043432e0@(irb):2 (lambda)&gt;, @options={:call=&gt;false}&gt;}&gt;</span>
+<span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">003</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="ss">:lazy_hello</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Proc:0x000000043432e0@(irb):2 (lambda)&gt;</span>
+<span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">004</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="ss">:lazy_hello</span><span class="p">).</span><span class="nf">call</span>
+<span class="no">Hello</span> <span class="no">Lazy</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span>
+<span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">005</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">register</span><span class="p">(</span><span class="ss">:hello</span><span class="p">,</span> <span class="o">-&gt;</span> <span class="p">{</span> <span class="nb">puts</span> <span class="s2">"Hello"</span> <span class="p">},</span> <span class="ss">call: </span><span class="kp">true</span><span class="p">)</span>
+<span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x000000042db460 @_container={"lazy_hello"=&gt;#&lt;Dry::Container::Item:0x00000004342a98 @item=#&lt;Proc:0x000000043432e0@(irb):2 (lambda)&gt;, @options={:call=&gt;false}&gt;, "hello"=&gt;#&lt;Dry::Container::Item:0x000000043814f0 @item=#&lt;Proc:0x000000043815b8@(irb):5 (lambda)&gt;, @options={:call=&gt;true}&gt;}&gt;</span>
+<span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">006</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="ss">:hello</span><span class="p">)</span>
+<span class="no">Hello</span>
+<span class="o">=&gt;</span> <span class="kp">nil</span></code></pre></figure>
+
+<p>And we can store namespaced identifiers.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">060</span> <span class="o">&gt;</span> <span class="n">container</span> <span class="o">=</span> <span class="no">Dry</span><span class="o">::</span><span class="no">Container</span><span class="p">.</span><span class="nf">new</span>
+ <span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x00000003cebc08 @_container={}&gt;</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">061</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">namespace</span><span class="p">(</span><span class="ss">:services</span><span class="p">)</span> <span class="k">do</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">062</span> <span class="o">&gt;</span>     <span class="n">namespace</span><span class="p">(</span><span class="ss">:article</span><span class="p">)</span> <span class="k">do</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">063</span> <span class="o">&gt;</span>       <span class="n">register</span><span class="p">(</span><span class="ss">:repository</span><span class="p">)</span> <span class="p">{</span> <span class="no">Class</span><span class="p">.</span><span class="nf">new</span> <span class="p">}</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">064</span><span class="p">?</span><span class="o">&gt;</span>     <span class="k">end</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">065</span><span class="p">?</span><span class="o">&gt;</span>   <span class="k">end</span>
+  <span class="o">=&gt;</span> <span class="c1">#&lt;Dry::Container:0x00000003cebc08 @_container={"services.article.repository"=&gt;#&lt;Dry::Container::Item:0x00000003c898a0 @item=#&lt;Proc:0x00000003c89ad0@(irb):63&gt;, @options={:call=&gt;true}&gt;}&gt;</span>
+  <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">066</span> <span class="o">&gt;</span> <span class="n">container</span><span class="p">.</span><span class="nf">resolve</span><span class="p">(</span><span class="s1">'services.article.repository'</span><span class="p">)</span>
+   <span class="o">=&gt;</span> <span class="c1">#&lt;Class:0x00000003c66490&gt;</span></code></pre></figure>
+
+<p>For more details, you could check this <a href="http://dry-rb.org/gems/dry-container">documentation</a>.</p>
+
+<p>Now, we need to create something to use dry-auto_inject. We will use scaffold to generate the Article model.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby/blog  rails g scaffold Article name:string description:string
+ Running via Spring preloader <span class="k">in </span>process 6093
+ invoke  active_record
+ create    db/migrate/20161115123949_create_articles.rb
+ create    app/models/article.rb
+ invoke    test_unit
+ create      <span class="nb">test</span>/models/article_test.rb
+ ...</code></pre></figure>
+
+<p>Now, we can see the created routes typing ‘rake routes’.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby/blog  rake routes
+ Prefix Verb   URI Pattern                  Controller#Action
+ articles GET    /articles<span class="o">(</span>.:format<span class="o">)</span>          articles#index
+ POST   /articles<span class="o">(</span>.:format<span class="o">)</span>          articles#create
+ new_article GET    /articles/new<span class="o">(</span>.:format<span class="o">)</span>      articles#new
+ edit_article GET    /articles/:id/edit<span class="o">(</span>.:format<span class="o">)</span> articles#edit
+ article GET    /articles/:id<span class="o">(</span>.:format<span class="o">)</span>      articles#show
+ PATCH  /articles/:id<span class="o">(</span>.:format<span class="o">)</span>      articles#update
+ PUT    /articles/:id<span class="o">(</span>.:format<span class="o">)</span>      articles#update
+ DELETE /articles/:id<span class="o">(</span>.:format<span class="o">)</span>      articles#destroy</code></pre></figure>
+
+<p>Before run application, we need to create the table to store article entries.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"> ~/projects/ruby/blog  rake routes
+ ~/projects/ruby/blog  rake db:migrate
+  <span class="o">==</span> 20161115123949 CreateArticles: migrating <span class="o">===================================</span>
+<span class="nt">--</span> create_table<span class="o">(</span>:articles<span class="o">)</span>
+  -&gt; 0.0015s
+  <span class="o">==</span> 20161115123949 CreateArticles: migrated <span class="o">(</span>0.0016s<span class="o">)</span> <span class="o">==========================</span></code></pre></figure>
+
+<p>We will change only the article#create route, but be free to modify everything you want. You can create an article to test if everything work as expected, So, open your browser and access http://localhost:3000/articles.</p>
+
+<p>After tests, we can change the code. Take a look at articles_controller.rb.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#app/controllers/articles_controller.rb</span>
+<span class="k">class</span> <span class="nc">ArticlesController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+ <span class="o">...</span>
+  <span class="k">def</span> <span class="nf">create</span>
+    <span class="vi">@article</span> <span class="o">=</span> <span class="no">Article</span><span class="p">.</span><span class="nf">new</span><span class="p">(</span><span class="n">article_params</span><span class="p">)</span> <span class="c1"># we will act only here</span>
+    <span class="o">...</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>I will create a command class only for illustration proposes. The command concept here, is very similar of <a href="http://trailblazer.to/gems/operation/1.1/">Trailblazer::Operation</a>. If you don’t like it, you can use Article#create to create directly, don’t worry :).</p>
+
+<p>Now, create the folder /commands/article under lib directory, after that, create file create.rb with lines below.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#lib/commands/article/create.rb</span>
+<span class="k">module</span> <span class="nn">Commands</span>
+  <span class="k">module</span> <span class="nn">Article</span>
+    <span class="k">class</span> <span class="nc">Create</span>
+      <span class="k">def</span> <span class="nf">call</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+        <span class="o">::</span><span class="no">Article</span><span class="p">.</span><span class="nf">create</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+      <span class="k">end</span>
+    <span class="k">end</span>
+  <span class="k">end</span>
+<span class="k">end</span></code></pre></figure>
+
+<p>If you run rails console and call Commands::Article::Create#call you will get an error, it’s because we need to add the line responsible to load the created structure at Blog::Application class.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#config/application</span>
+<span class="k">module</span> <span class="nn">Blog</span>
+  <span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="no">Rails</span><span class="o">::</span><span class="no">Application</span>
+    <span class="n">config</span><span class="p">.</span><span class="nf">eager_load_paths</span> <span class="o">+=</span> <span class="no">Dir</span><span class="p">[</span><span class="s2">"</span><span class="si">#{</span><span class="no">Rails</span><span class="p">.</span><span class="nf">root</span><span class="si">}</span><span class="s2">/lib"</span><span class="p">]</span> <span class="c1"># add this line</span></code></pre></figure>
+
+<p>Now you can run rails console and call Commands::Article::Create#call with params. An article is created.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"> <span class="o">~</span><span class="sr">/projects/</span><span class="n">ruby</span><span class="o">/</span><span class="n">blog</span>  <span class="n">rails</span> <span class="n">console</span>
+ <span class="no">Running</span> <span class="n">via</span> <span class="no">Spring</span> <span class="n">preloader</span> <span class="k">in</span> <span class="n">process</span> <span class="mi">10039</span>
+ <span class="no">Loading</span> <span class="n">development</span> <span class="n">environment</span> <span class="p">(</span><span class="no">Rails</span> <span class="mf">5.0</span><span class="o">.</span><span class="mf">0.1</span><span class="p">)</span>
+ <span class="mf">2.3</span><span class="o">.</span><span class="mi">1</span> <span class="p">:</span><span class="mo">001</span> <span class="o">&gt;</span> <span class="no">Commands</span><span class="o">::</span><span class="no">Article</span><span class="o">::</span><span class="no">Create</span><span class="p">.</span><span class="nf">new</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="ss">name: </span><span class="s2">"AutoInject"</span><span class="p">,</span> <span class="ss">description: </span><span class="s2">"How can i use DryAutoInject"</span><span class="p">)</span>
+    <span class="p">(</span><span class="mf">0.1</span><span class="n">ms</span><span class="p">)</span>  <span class="k">begin</span> <span class="n">transaction</span>
+      <span class="no">SQL</span> <span class="p">(</span><span class="mf">0.5</span><span class="n">ms</span><span class="p">)</span>  <span class="no">INSERT</span> <span class="no">INTO</span> <span class="s2">"articles"</span> <span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">,</span> <span class="s2">"created_at"</span><span class="p">,</span> <span class="s2">"updated_at"</span><span class="p">)</span> <span class="no">VALUES</span> <span class="p">(</span><span class="sc">?,</span> <span class="p">?,</span> <span class="sc">?,</span> <span class="p">?)</span>  <span class="p">[[</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"AutoInject"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"description"</span><span class="p">,</span> <span class="s2">"How can i use DryAutoInject"</span><span class="p">],</span> <span class="p">[</span><span class="s2">"created_at"</span><span class="p">,</span> <span class="mi">2016</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">15</span> <span class="mi">14</span><span class="p">:</span><span class="mo">03</span><span class="p">:</span><span class="mi">42</span> <span class="no">UTC</span><span class="p">],</span> <span class="p">[</span><span class="s2">"updated_at"</span><span class="p">,</span> <span class="mi">2016</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">15</span> <span class="mi">14</span><span class="p">:</span><span class="mo">03</span><span class="p">:</span><span class="mi">42</span> <span class="no">UTC</span><span class="p">]]</span>
+         <span class="p">(</span><span class="mf">7.9</span><span class="n">ms</span><span class="p">)</span>  <span class="n">commit</span> <span class="n">transaction</span>
+          <span class="o">=&gt;</span> <span class="kp">true</span></code></pre></figure>
+
+<p>We have to define the container to register all dependencies needed. To reach it, we have to create a file under config/initializers to register dependencies.</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#config/initializers/auto_inject.rb</span>
+<span class="k">class</span> <span class="nc">Blog::Container</span>
+  <span class="kp">extend</span> <span class="no">Dry</span><span class="o">::</span><span class="no">Container</span><span class="o">::</span><span class="no">Mixin</span>
+
+  <span class="n">register</span><span class="p">(</span><span class="s1">'commands.article.create'</span><span class="p">)</span> <span class="k">do</span>
+    <span class="no">Commands</span><span class="o">::</span><span class="no">Article</span><span class="o">::</span><span class="no">Create</span><span class="p">.</span><span class="nf">new</span>
+  <span class="k">end</span>
+<span class="k">end</span>
+
+<span class="no">AutoInject</span> <span class="o">=</span> <span class="no">Dry</span><span class="o">::</span><span class="no">AutoInject</span><span class="p">(</span><span class="no">Blog</span><span class="o">::</span><span class="no">Container</span><span class="p">)</span></code></pre></figure>
+
+<p>Inside this file the constant AutoInject was defined, it will be useful inside ArticlesController to inject dependencies.</p>
+
+<p>To use the registered command, we have to include a reference to the registered dependency. The code will look as below:</p>
+
+<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="c1">#app/controllers/articles_controller.rb</span>
+<span class="k">class</span> <span class="nc">ArticlesController</span> <span class="o">&lt;</span> <span class="no">ApplicationController</span>
+  <span class="c1"># The alias create_article it's a reference</span>
+  <span class="c1"># to 'commands.article.create'</span>
+  <span class="kp">include</span> <span class="no">AutoInject</span><span class="p">[</span><span class="ss">create_article: </span><span class="s1">'commands.article.create'</span><span class="p">]</span>
+  <span class="o">...</span>
+
+  <span class="k">def</span> <span class="nf">create</span>
+    <span class="vi">@article</span> <span class="o">=</span> <span class="n">create_article</span><span class="p">.</span><span class="nf">call</span><span class="p">(</span><span class="n">article_params</span><span class="p">)</span>
+
+    <span class="n">respond_to</span> <span class="k">do</span> <span class="o">|</span><span class="nb">format</span><span class="o">|</span>
+      <span class="k">if</span> <span class="vi">@article</span><span class="p">.</span><span class="nf">persisted?</span></code></pre></figure>
+
+<p>Finally, you can test again to see DI working. To see how add tests and many cool things please check the <a href="http://dry-rb.org/">site</a>.</p>
+
+<p>All code is available on my <a href="https://github.com/GabrielMalakias/experiences">github</a>.</p>
+
+<p>Thanks!</p>
+
+<h4 id="references">References</h4>
+<ul>
+  <li>http://dry-rb.org/;</li>
+  <li>http://trailblazer.to/gems/operation/1.1/;</li>
+  <li>http://www.martinfowler.com/articles/injection.html;</li>
+  <li>http://solnic.eu/2013/12/17/the-world-needs-another-post-about-dependency-injection-in-ruby.html;</li>
+  <li>https://en.wikipedia.org/wiki/Dependency_inversion_principle.</li>
+</ul>
+
+:ET
